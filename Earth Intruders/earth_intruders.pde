@@ -1,5 +1,5 @@
 float t, blk;
-int i, row=10, col=10, score, grdSz, mode=0, wave=1, curLev=0;
+int i, row=10, col=10, score, grdSz, mode=0, wave=1, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
 ArrayList<Alien> aliens = new ArrayList<Alien>();
 //ArrayList<PowerUp> powerup = new ArrayList<PowerUp>();
@@ -10,16 +10,16 @@ ParticleSystem ps;
 // Space Invaders clone in P3 by vvixi
 // fix enemy laser positioning
 // laser needs fixed: it skips some places on the board
-// needs level progression tied in with patterns
+// needs level progression tied in with patterns, reordered
 // needs additional enemies / enemy animations
 // needs powerups implemented
 // needs enemy laser collision with player
-// particle system needs review
+// particle system needs review, speed is wrong
 // needs refactoring and cleanup
-// timer needs fixed
-// scoreboard
+// player death, particles
 
 void setup() {
+  start = millis();
   size(700, 700);
   frameRate(60);
   //smooth();
@@ -39,14 +39,14 @@ void keyPressed() {
   player.keyPressed();
 }
 void draw() {
-  if (mode == 0) {
-    int time = millis();
-    int start = time / 1000;
+  if (mode == 0) {   
+    
     int wait = 2000;
-    //println(millis() - start);
-    if (time - start >= wait) {
-      //start = millis();
-      //spawn_aliens();
+    timeElapsed = millis() - start;
+    if (timeElapsed > wait) {
+      
+      spawn_aliens();
+      start = millis();
       mode+=1;
     }
     bg = loadImage("assets/sb3.png");
@@ -54,25 +54,25 @@ void draw() {
     bg.resize(700, 700);
     background(bg);
     textSize(28);
-    //print(time);
     text("W A V E  "+wave, width/2-80, height/2); 
 
   }
   
   if (mode == 1) {
-  //stroke(0);
+    
+    //stroke(0);
     bg = loadImage("assets/sb3.png");
     //bg = loadImage("assets/sb" + wave + ".png");
     bg.resize(700, 700);
     background(bg);
+    
     //print(aliens.size());
     
     if (aliens.size()-1 == 0) { 
-      spawn_aliens();
-      mode = 0;
-      wave++;
-      //spawn_aliens();
+      wave++;   
       
+      start = millis();
+      mode = 0;  
     }
     
     // decoupled from aliens loop, fixes laser sizing/speed bug
@@ -169,8 +169,12 @@ class Alien {
 
   }
   void update() {
-    if (random(400) > 399.5) {
-      lasers.add(new Laser(xpos, ypos, "enemy")); }
+    // make sure player is allowed to shoot
+    if (mode == 1) {
+      if (random(400) > 399.5) {
+        lasers.add(new Laser(xpos, ypos, "enemy"));
+      }
+    }
     if (dir == 0) { dir = 1; }
     if (moveMode == "static") {
       if (xpos > 9) {
@@ -221,7 +225,6 @@ class Alien {
         //ypos -= .5;
       }
     xpos+=dir*spd;
-    //println(spd);
     }   
   }
 }
@@ -318,18 +321,6 @@ class Player {
         }
       }
     }
-    // draw the player ship
-    //noStroke();
-    //translate(xpos*blk, ypos*blk);
-    //fill(255, 0, 0);
-    //rect(xpos*blk, ypos*blk, blk, blk);
-    //triangle(0, blk-4, blk, blk-4, blk/2, 0);
-    //triangle(0, blk-4, blk, blk-4, 8, blk/2);
-    //triangle(0, blk-4, blk, blk-4, blk-8, blk/2);
-    //fill(0, 100, 255);
-    //ellipseMode(CORNER);
-    //ellipse(0+4, blk-8, blk-8, blk/10);
-    //ellipse(blk/3, blk/2, blk/3, blk/4);
   }
   void keyPressed() {
     
@@ -341,7 +332,10 @@ class Player {
         xpos+=1;
       }
       else if(keyCode == UP) {
-        lasers.add(new Laser(xpos, ypos, "player"));
+        // make sure player is allowed to shoot
+        if (mode == 1) {
+          lasers.add(new Laser(xpos, ypos, "player"));
+        }
       }
     }
   }

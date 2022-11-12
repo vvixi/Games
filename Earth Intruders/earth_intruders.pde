@@ -8,25 +8,22 @@ PImage bg;
 ParticleSystem ps;
 
 // Space Invaders clone in P3 by vvixi
-// fix enemy laser positioning
-// laser needs fixed: it skips some places on the board
+// fix enemy hitbox
 // needs level progression tied in with patterns, reordered
 // needs additional enemies / enemy animations
 // needs powerups implemented
 // needs enemy laser collision with player
-// particle system needs review, speed is wrong
-// needs refactoring and cleanup
 // player death, particles
+// player laser should not move with player
 
 void setup() {
   start = millis();
   size(700, 700);
-  frameRate(60);
-  //smooth();
+  frameRate(30);
+  smooth();
   grdSz = row*col;
   blk = width/col;
   player = new Player(5, 9);
-  spawn_aliens();
 }
 void spawn_aliens() {
   for (int i = 1; i < 9; i++) {
@@ -34,11 +31,13 @@ void spawn_aliens() {
       aliens.add(new Alien(i, j));
     }
   }
+  //aliens.add(new Alien(3, 7));
 }
 void keyPressed() {
   player.keyPressed();
 }
 void draw() {
+  // this mode is before round start
   if (mode == 0) {   
     
     int wait = 2000;
@@ -54,10 +53,11 @@ void draw() {
     bg.resize(700, 700);
     background(bg);
     textSize(28);
+    fill(255);
     text("W A V E  "+wave, width/2-80, height/2); 
 
   }
-  
+  // this mode indicates round is started
   if (mode == 1) {
     
     //stroke(0);
@@ -125,7 +125,7 @@ void draw() {
             lasers.remove(j);
             aliens.remove(i);
             score+=100;
-          } else if (las.ypos < 0) { lasers.remove(j);
+          } else if (las.ypos < 0 || mode != 1) { lasers.remove(j);
           }
         }
           
@@ -177,16 +177,7 @@ class Alien {
     }
     if (dir == 0) { dir = 1; }
     if (moveMode == "static") {
-      if (xpos > 9) {
-        dir = -1; 
-        ypos += .5;
-        spd += .005;
-      }
-      if (xpos < 0) {
-        dir = 1;
-        ypos += .5;
-      }
-      xpos+=dir*spd;
+
     }   
     if (moveMode == "snake") {
       if (xpos > 9) {
@@ -232,13 +223,6 @@ class Laser {
   float xpos, ypos, spd=.4;
   int pixelsize = 4;
   String type;
-  String[] sprite2 = {
-    "0011100",
-    "0111110",
-    "0111110",
-    "0011100",
-    "0011100",
-    "0001000"};
   String[] sprite = {
     "0112110",
     "0112110",
@@ -274,10 +258,10 @@ class Laser {
     //line(((xpos*blk)+blk/2), ypos*blk, (xpos*blk)+blk/2, (ypos*blk)-20);
   }
   void update() {
-    //if (type == "enemy") { spd *= -1;
     if (type == "enemy") { ypos -= -spd;
     } else { ypos -= spd; }
     if (type == "player") {
+      
       xpos = player.xpos; // not ideal
     }
       
@@ -352,7 +336,7 @@ class Particle {
     //accel = new PVector(0, 0.05);
     velo = new PVector(random(-1, 1), random(-1, 1));
     pos = l.copy();
-    life = 255.0;
+    life = 500.0;
   }
   void run() {
     update();

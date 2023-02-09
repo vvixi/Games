@@ -1,4 +1,4 @@
-float t, blk;
+float t, blk, current_x;
 int i, row=10, col=10, score, grdSz, mode=0, wave=1, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
 ArrayList<Alien> aliens = new ArrayList<Alien>();
@@ -23,7 +23,8 @@ void setup() {
   smooth();
   grdSz = row*col;
   blk = width/col;
-  player = new Player(5, 9);
+  
+  player = new Player(5+blk/2, 9);
 }
 void spawn_aliens() {
   for (int i = 1; i < 9; i++) {
@@ -72,6 +73,7 @@ void draw() {
       wave++;   
       
       start = millis();
+      lasers.clear();
       mode = 0;  
     }
     
@@ -81,10 +83,10 @@ void draw() {
       las.update();
       las.display();
     }
-    // grid lines
+    //// grid lines
     //for (int x = 0; x < col; x++) {
     //  for (int y = 0; y < row; y++) {
-    //    fill(0);
+    //    //fill(0);
     //    stroke(240);
     //    rect(x*blk, y*blk, blk, blk);
     //  }
@@ -107,8 +109,11 @@ void draw() {
       //println(int(alien.xpos)); // alien never reaches xpos 9
       for (int j = 0; j < lasers.size(); j++) {
         Laser las = lasers.get(j);
-        
+        // make the hitbox detection more universal
         //stroke(0, 100, 245);
+        //check_hit("player");
+        //check_hit(String entity) {
+        // was set to player 
         if (las.type == "player") {
           if ((int(las.ypos) == int(alien.ypos)) && (int(las.xpos) == int(alien.xpos))) {
             stroke(245);
@@ -169,7 +174,7 @@ class Alien {
 
   }
   void update() {
-    // make sure player is allowed to shoot
+    // make sure enemy is allowed to shoot
     if (mode == 1) {
       if (random(400) > 399.5) {
         lasers.add(new Laser(xpos, ypos, "enemy"));
@@ -261,8 +266,8 @@ class Laser {
     if (type == "enemy") { ypos -= -spd;
     } else { ypos -= spd; }
     if (type == "player") {
-      
-      xpos = player.xpos; // not ideal
+      //ypos -= spd;
+      //xpos = player.xpos; // not ideal
     }
       
   }
@@ -270,13 +275,13 @@ class Laser {
 class Player {
   float xpos, ypos;
   String[] sprite = {
-    "0001000",
-    "0013100",
-    "0013100",
-    "0113110",
-    "0111110",
-    "1100011",
-    "2000002"};
+    "000010000",
+    "000131000",
+    "000131000",
+    "001131100",
+    "001111100",
+    "012000210",
+    "020000020"};
   Player (float _xpos, float _ypos) {
     xpos = _xpos;
     ypos = _ypos;
@@ -288,7 +293,7 @@ class Player {
     noStroke();
     xpos = constrain(xpos, 0, 9);
     
-    int pixelsize = 6;
+    int pixelsize = 7;
     //translate(xpos*blk, ypos*blk);
     for (int i = 0; i < sprite.length; i++) {
       String row = (String) sprite[i];
@@ -318,7 +323,7 @@ class Player {
       else if(keyCode == UP) {
         // make sure player is allowed to shoot
         if (mode == 1) {
-          lasers.add(new Laser(xpos, ypos, "player"));
+          lasers.add(new Laser(this.xpos, this.ypos, "player"));
         }
       }
     }
@@ -333,10 +338,10 @@ class Particle {
   float life;
   
   Particle(PVector l) {
-    //accel = new PVector(0, 0.05);
+    accel = new PVector(0, 0.005);
     velo = new PVector(random(-1, 1), random(-1, 1));
     pos = l.copy();
-    life = 500.0;
+    life = 800.0;
   }
   void run() {
     update();
@@ -344,14 +349,14 @@ class Particle {
   }
   
   void update() {
-    //velo.add(accel);
+    velo.add(accel);
     pos.add(velo);
     life -= 3.0;
   }
     
   void display() {
     stroke(255, life);
-    fill(0, 0, 255, life);
+    fill(255, life);
     rect(pos.x, pos.y, 2, 2);
   }
   

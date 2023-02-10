@@ -1,4 +1,4 @@
-float t, blk, current_x;
+float t, blk, offs, current_x;
 int i, row=10, col=10, score, grdSz, mode=0, wave=1, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
 ArrayList<Alien> aliens = new ArrayList<Alien>();
@@ -6,14 +6,14 @@ ArrayList<Alien> aliens = new ArrayList<Alien>();
 Player player;
 PImage bg;
 ParticleSystem ps;
-
+ParticleSystem psP;
 // Space Invaders clone in P3 by vvixi
-// fix enemy hitbox
+// fixed: player pos, laser pos, player hitbox
+
+// todo:
 // needs level progression tied in with patterns, reordered
 // needs additional enemies / enemy animations
 // needs powerups implemented
-// needs enemy laser collision with player
-// player death, particles
 // player laser should not move with player
 
 void setup() {
@@ -23,8 +23,9 @@ void setup() {
   smooth();
   grdSz = row*col;
   blk = width/col;
+  offs = blk/2;
   
-  player = new Player(5+blk/2, 9);
+  player = new Player(5+offs, 9);
 }
 void spawn_aliens() {
   for (int i = 1; i < 9; i++) {
@@ -32,12 +33,18 @@ void spawn_aliens() {
       aliens.add(new Alien(i, j));
     }
   }
-  //aliens.add(new Alien(3, 7));
 }
 void keyPressed() {
   player.keyPressed();
 }
 void draw() {
+  // update to switch / case, implement -1 as Game Over
+  if (mode == -1) { 
+    background(bg);
+    textSize(28);
+    fill(255);
+    text("G A M E  O V E R", width/2-80, height/2); 
+  }
   // this mode is before round start
   if (mode == 0) {   
     
@@ -103,35 +110,48 @@ void draw() {
       } else if (wave == 4) {
         alien.moveMode = "snake";
       }
-      ps = new ParticleSystem(new PVector(alien.xpos*blk, alien.ypos*blk));
+      ps = new ParticleSystem(new PVector((alien.xpos*blk)+offs, (alien.ypos*blk)+offs));
       alien.display();
       alien.update();
-      //println(int(alien.xpos)); // alien never reaches xpos 9
+      //rect(alien.xpos*blk, alien.ypos*blk, blk, blk);
       for (int j = 0; j < lasers.size(); j++) {
         Laser las = lasers.get(j);
         // make the hitbox detection more universal
         //stroke(0, 100, 245);
-        //check_hit("player");
-        //check_hit(String entity) {
-        // was set to player 
+
         if (las.type == "player") {
           if ((int(las.ypos) == int(alien.ypos)) && (int(las.xpos) == int(alien.xpos))) {
             stroke(245);
-          //if (int(las.ypos) < int(alien.ypos+blk) && int(las.ypos) > int(alien.ypos-blk) && int(las.xpos) > int(alien.xpos-blk) && int(las.xpos) < int(alien.xpos+blk)) {
-            for (int t =0; t < 90; t++) {
-              //rect(x*blk, y*blk, blk, blk);
-              //ps = new ParticleSystem(new PVector(x*blk, y*blk));
-              //stroke(0, 100, 255);
-              
+            //if (int(las.ypos) < int(alien.ypos+blk) && int(las.ypos) > int(alien.ypos-blk) && int(las.xpos) > int(alien.xpos-blk) && int(las.xpos) < int(alien.xpos+blk)) {
+
+            // timer for particle effect
+            for (int t =0; t < 60; t++) {
+            //  //rect(x*blk, y*blk, blk, blk);
               ps.addParticle();
               ps.run();
             }
             
             lasers.remove(j);
-            aliens.remove(i);
-            score+=100;
-          } else if (las.ypos < 0 || mode != 1) { lasers.remove(j);
+            if (aliens.size()-1 > 0) {
+              aliens.remove(i);
+              score+=30;
+            }
           }
+            
+        } else if (las.type == "enemy") 
+          if ((int(las.ypos) == int(player.ypos)) && (int(las.xpos) == int(player.xpos))) {
+            player.hit();
+            //if (int(las.ypos) < int(alien.ypos+blk) && int(las.ypos) > int(alien.ypos-blk) && int(las.xpos) > int(alien.xpos-blk) && int(las.xpos) < int(alien.xpos+blk)) {
+
+            // timer for particle effect
+            for (int t =0; t < 60; t++) {
+            //  //rect(x*blk, y*blk, blk, blk);
+              psP.addParticle();
+              psP.run();
+            }
+
+          } else if (las.ypos < 0 || mode != 1) { lasers.remove(j);
+          
         }
           
       }
@@ -176,8 +196,10 @@ class Alien {
   void update() {
     // make sure enemy is allowed to shoot
     if (mode == 1) {
+      // hard mode
       if (random(400) > 399.5) {
-        lasers.add(new Laser(xpos, ypos, "enemy"));
+        //(alien.xpos*blk)+blk/2, (alien.ypos*blk)+blk/2)
+        lasers.add(new Laser(xpos+.25, ypos, "enemy"));
       }
     }
     if (dir == 0) { dir = 1; }
@@ -225,7 +247,7 @@ class Alien {
   }
 }
 class Laser {
-  float xpos, ypos, spd=.4;
+  float xpos, ypos, spd=.6;
   int pixelsize = 4;
   String type;
   String[] sprite = {
@@ -240,7 +262,7 @@ class Laser {
   type = _type;
   }
   void display() {
-    
+    noStroke();
     // draw sprite
     //stroke(245);
     for (int i = 0; i < sprite.length; i++) {
@@ -264,16 +286,13 @@ class Laser {
   }
   void update() {
     if (type == "enemy") { ypos -= -spd;
-    } else { ypos -= spd; }
-    if (type == "player") {
-      //ypos -= spd;
-      //xpos = player.xpos; // not ideal
-    }
-      
+    } else { ypos -= spd; }      
   }
 }
+
 class Player {
   float xpos, ypos;
+  int health;
   String[] sprite = {
     "000010000",
     "000131000",
@@ -285,28 +304,32 @@ class Player {
   Player (float _xpos, float _ypos) {
     xpos = _xpos;
     ypos = _ypos;
+    health = 2;
+    
   }
   
   
   void display() {
     // draw sprite
-    noStroke();
-    xpos = constrain(xpos, 0, 9);
-    
-    int pixelsize = 7;
-    //translate(xpos*blk, ypos*blk);
-    for (int i = 0; i < sprite.length; i++) {
-      String row = (String) sprite[i];
-      for (int j = 0; j < row.length(); j++) {
-        if (row.charAt(j) == '1') {
-          fill(0, 240, 100);
-          rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
-        } else if (row.charAt(j) == '2') {
-          fill(240, 100, 0);
-          rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
-        } else if (row.charAt(j) == '3') {
-          fill(100, 100, 200);
-          rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
+    //noStroke();
+    if (health > 0) {
+      xpos = constrain(xpos, 0, 9);
+      psP = new ParticleSystem(new PVector((xpos*blk)+blk/2, (ypos*blk)+blk/2));
+      int pixelsize = 7;
+      //translate(xpos*blk, ypos*blk);
+      for (int i = 0; i < sprite.length; i++) {
+        String row = (String) sprite[i];
+        for (int j = 0; j < row.length(); j++) {
+          if (row.charAt(j) == '1') {
+            fill(0, 240, 100);
+            rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
+          } else if (row.charAt(j) == '2') {
+            fill(240, 100, 0);
+            rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
+          } else if (row.charAt(j) == '3') {
+            fill(100, 100, 200);
+            rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
+          }
         }
       }
     }
@@ -315,18 +338,22 @@ class Player {
     
     if(key == CODED) {
       if(keyCode == LEFT) {
-        xpos-=1;
+        this.xpos-=1;
       }
       else if(keyCode == RIGHT) {
-        xpos+=1;
+        this.xpos+=1;
       }
       else if(keyCode == UP) {
         // make sure player is allowed to shoot
-        if (mode == 1) {
-          lasers.add(new Laser(this.xpos, this.ypos, "player"));
+        if (mode == 1 && player.health > 0) {
+          playerShoot();
         }
       }
     }
+  }
+  void playerShoot() { lasers.add(new Laser(this.xpos+.25, this.ypos, "player")); }
+  void hit() { stroke(255); fill(255, 0, 0); 
+    if (health>0) { health-=1; }
   }
 }
 
@@ -341,7 +368,7 @@ class Particle {
     accel = new PVector(0, 0.005);
     velo = new PVector(random(-1, 1), random(-1, 1));
     pos = l.copy();
-    life = 800.0;
+    life = 255.0;
   }
   void run() {
     update();
@@ -356,7 +383,7 @@ class Particle {
     
   void display() {
     stroke(255, life);
-    fill(255, life);
+    //fill(255, life);
     rect(pos.x, pos.y, 2, 2);
   }
   
@@ -380,6 +407,11 @@ class ParticleSystem {
   
   void addParticle() {
     particles.add(new Particle(origin));
+  }
+  void draw() {
+    background(0);
+    //ps.addParticle();
+    //ps.run();
   }
   
   void run() {

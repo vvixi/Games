@@ -1,4 +1,4 @@
-float t, blk, offs, current_x;
+float t, blk, offs, noise;
 int i, row=10, col=10, score, grdSz, mode=0, wave=1, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
 ArrayList<Alien> aliens = new ArrayList<Alien>();
@@ -8,13 +8,12 @@ PImage bg;
 ParticleSystem ps;
 ParticleSystem psP;
 // Space Invaders clone in P3 by vvixi
-// fixed: player pos, laser pos, player hitbox
+// fixed: player pos, laser pos, player hitbox, player death, gameover, health, player particles
 
 // todo:
 // needs level progression tied in with patterns, reordered
 // needs additional enemies / enemy animations
 // needs powerups implemented
-// player laser should not move with player
 
 void setup() {
   start = millis();
@@ -43,7 +42,7 @@ void draw() {
     background(bg);
     textSize(28);
     fill(255);
-    text("G A M E  O V E R", width/2-80, height/2); 
+    text("G  A  M  E    O  V  E  R", width/2-60, height/2); 
   }
   // this mode is before round start
   if (mode == 0) {   
@@ -99,17 +98,29 @@ void draw() {
     //  }
     //}
     for (int i = 0; i < aliens.size()-1; i++) {
-      stroke(0, 100, 245);
+      //stroke(0, 100, 245);
       Alien alien = aliens.get(i);
-      if (wave == 1) {
-        alien.moveMode = "static";
-      } else if (wave == 2) {
-        alien.moveMode = "line";
-      } else if (wave == 3) {
-        alien.moveMode = "loop";
-      } else if (wave == 4) {
-        alien.moveMode = "snake";
+      switch(4) {
+        case 0:
+          alien.moveMode = "static";
+          break;
+        case 1:
+          alien.moveMode = "line";
+          break;
+        case 2:
+          alien.moveMode = "loop";
+          break;
+        case 3:
+          alien.moveMode = "snake";
+          break;
+        case 4:
+          alien.moveMode = "aggro";
+          break;
+        default:
+          alien.moveMode = "static";
+          break;
       }
+
       ps = new ParticleSystem(new PVector((alien.xpos*blk)+offs, (alien.ypos*blk)+offs));
       alien.display();
       alien.update();
@@ -140,22 +151,14 @@ void draw() {
             
         } else if (las.type == "enemy") 
           if ((int(las.ypos) == int(player.ypos)) && (int(las.xpos) == int(player.xpos))) {
+            lasers.remove(j);
             player.hit();
+            
             //if (int(las.ypos) < int(alien.ypos+blk) && int(las.ypos) > int(alien.ypos-blk) && int(las.xpos) > int(alien.xpos-blk) && int(las.xpos) < int(alien.xpos+blk)) {
 
-            // timer for particle effect
-            for (int t =0; t < 60; t++) {
-            //  //rect(x*blk, y*blk, blk, blk);
-              psP.addParticle();
-              psP.run();
-            }
-
-          } else if (las.ypos < 0 || mode != 1) { lasers.remove(j);
-          
-        }
-          
-      }
-      
+          } else if (las.ypos < 0 || mode != 1) { lasers.remove(j); 
+        }   
+      }      
     }
     fill(200);
     textSize(28);
@@ -182,6 +185,7 @@ class Alien {
   }
   void display() {
     //draw sprite
+    stroke(0, 100, 245);
     fill(0, 200, 200);
     for (int i = 0; i < sprite.length; i++) {
       String row = (String) sprite[i];
@@ -194,6 +198,8 @@ class Alien {
 
   }
   void update() {
+
+    if (xpos == player.xpos && ypos == player.ypos) { player.hit(); }
     // make sure enemy is allowed to shoot
     if (mode == 1) {
       // hard mode
@@ -232,22 +238,17 @@ class Alien {
       xpos+=dir*spd;
     }   
     if (moveMode == "line") {
-      if (xpos > 9) {
-        dir = -1; 
-        //ypos += .5;
-        spd += .005;
-      }
-      if (xpos < 0) {
-        dir = 1;
-        //ypos += .5;
-        //ypos -= .5;
-      }
-    xpos+=dir*spd;
+      if (xpos > 9 || xpos < 0) { dir *= -1; spd+= .0025; }
+      xpos+=dir*spd;
     }   
+    if (moveMode == "aggro") {
+      ypos += .005;
+    }
+    //xpos+=dir*spd;
   }
 }
 class Laser {
-  float xpos, ypos, spd=.6;
+  float xpos, ypos, spd=.4;
   int pixelsize = 4;
   String type;
   String[] sprite = {
@@ -304,19 +305,20 @@ class Player {
   Player (float _xpos, float _ypos) {
     xpos = _xpos;
     ypos = _ypos;
-    health = 2;
+    health = 3;
     
   }
   
   
   void display() {
     // draw sprite
-    //noStroke();
+    noise+=.1;
+    float r = noise(noise) * 255;
+    stroke(0, 100, 245);
     if (health > 0) {
       xpos = constrain(xpos, 0, 9);
       psP = new ParticleSystem(new PVector((xpos*blk)+blk/2, (ypos*blk)+blk/2));
       int pixelsize = 7;
-      //translate(xpos*blk, ypos*blk);
       for (int i = 0; i < sprite.length; i++) {
         String row = (String) sprite[i];
         for (int j = 0; j < row.length(); j++) {
@@ -324,15 +326,15 @@ class Player {
             fill(0, 240, 100);
             rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
           } else if (row.charAt(j) == '2') {
-            fill(240, 100, 0);
+            fill(r, 40, 0); 
             rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
           } else if (row.charAt(j) == '3') {
             fill(100, 100, 200);
             rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
           }
         }
-      }
-    }
+      } 
+    } else { mode = -1; }
   }
   void keyPressed() {
     
@@ -347,13 +349,25 @@ class Player {
         // make sure player is allowed to shoot
         if (mode == 1 && player.health > 0) {
           playerShoot();
+        } else if (mode == 1 && player.health >= 0) {
+          mode = 0; aliens.clear(); lasers.clear(); health = 3; score = 0; wave = 1;
         }
       }
     }
   }
-  void playerShoot() { lasers.add(new Laser(this.xpos+.25, this.ypos, "player")); }
-  void hit() { stroke(255); fill(255, 0, 0); 
-    if (health>0) { health-=1; }
+  void playerShoot() { lasers.add(new Laser(player.xpos+.25, player.ypos, "player")); }
+  void hit() { 
+    if (health>0) { health-=1; stroke(255); fill(255, 0, 0); 
+    }
+    if (health<=0) { death();
+    }
+  }
+  void death() {
+    // timer for particle effect
+    for (int t =0; t < 120; t++) {
+      psP.addParticle();
+      psP.run();
+    }
   }
 }
 
@@ -410,8 +424,6 @@ class ParticleSystem {
   }
   void draw() {
     background(0);
-    //ps.addParticle();
-    //ps.run();
   }
   
   void run() {

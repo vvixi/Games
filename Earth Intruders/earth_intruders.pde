@@ -1,5 +1,5 @@
 float t, blk, offs, noise;
-int i, row=10, col=10, score, grdSz, mode=0, wave=0, curLev=0, start, timeElapsed;
+int i, row=10, col=10, score, grdSz, mode=0, wave=4, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
 ArrayList<Alien> aliens = new ArrayList<Alien>();
 //ArrayList<PowerUp> powerup = new ArrayList<PowerUp>();
@@ -8,10 +8,12 @@ PImage bg;
 ParticleSystem ps;
 ParticleSystem psP;
 // Space Invaders clone in P3 by vvixi
-// fixed: player pos, player hitbox, player death, gameover, health, player particles, level progression
+// fixed: player pos, laser pos, player hitbox, player death, gameover, health, player particles
 
 // todo:
-// needs player laser position bug fixed, bug with enemy hitbox
+// needs level progression tied in with patterns, reordered
+// needs additional enemies / enemy animations
+// needs powerups implemented
 
 void setup() {
   start = millis();
@@ -95,8 +97,11 @@ void draw() {
     //  }
     //}
     for (int i = 0; i < aliens.size()-1; i++) {
+      
       //stroke(0, 100, 245);
       Alien alien = aliens.get(i);
+      if (alien.xpos == player.xpos && alien.ypos == player.ypos) { player.hit(); }
+      if (int(alien.ypos) == 8) { player.death(); }
       switch(wave) {
         case 0:
           alien.moveMode = "static";
@@ -261,14 +266,13 @@ class Laser {
         } else if (row.charAt(j) == '2') {
             fill(250);
             rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
-          
         }
       }
     }
   }
   void update() {
     if (type == "enemy") { ypos -= -spd;
-    } else { xpos = player.xpos; ypos -= spd; }      
+    } else { xpos = player.xpos +.25; ypos -= spd; }      
   }
 }
 
@@ -330,8 +334,9 @@ class Player {
         // make sure player is allowed to shoot
         if (mode == 1 && player.health > 0) {
           playerShoot();
+          
         } else if (mode == -1 && player.health <= 0) {
-          mode = 0; aliens.clear(); lasers.clear(); health = 3; score = 0; wave = 0;
+          mode = 0; aliens.clear(); lasers.clear(); health = 3; score = 0; wave = 1;
         }
       }
     }

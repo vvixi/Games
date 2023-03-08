@@ -5,13 +5,10 @@
 Bunny Bakery is a puzzle matching game made in p3
 
 This game includes the following features (and more!):
-* match 3 desserts to clear the row
+* match 3 or 4 desserts to clear the row
 * chain multiplier for sequential matches
 * particle effects
 
-There are several bugs which need to be worked out as I find the time. 
-
 Known issues:
 * code needs cleaned up and refactored
-* need support for simultaneous matches
-* would be nice to add a wildcard powerup
+* needs a wildcard powerup

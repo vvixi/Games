@@ -2,15 +2,15 @@
 // 
 // swap horizontally: left click
 // swap vertically: right click
-
+int ringSz = 0;
 int scoreTxt = 33;
-int clicks = 0, chain = 0, boardSize = 9;
-int cols = 3, rows = 3, numTreats = 5;
+int clicks = 0, chain = 0, boardSize = 16;
+int cols = 4, rows = 4, numTreats = 7;
 IntList boardState = new IntList(boardSize);
 boolean selected, visible=true, titleScreen = true;
 PFont font;
 float blk, offs, rand;
-PImage [] dish = new PImage[7];
+PImage [] dish = new PImage[8];
 PImage wood = new PImage();
 PImage chainIco = new PImage();
 int score;
@@ -23,9 +23,9 @@ void setup() {
   textFont(font);
   rand = random(1);
   stroke(200);
-  blk = width/3;
+  blk = width/cols;
   offs = blk/2;
-  size(310, 340);
+  size(620, 680);
   background(200, 160, 90);
   wood = loadImage("assets/wood_tex1.png");
   wood.resize(128, 0);
@@ -39,15 +39,16 @@ void setup() {
   dish[4] = loadImage("assets/CookieCheesecake.png");
   dish[5] = loadImage("assets/Tirimasu.png");
   dish[6] = loadImage("assets/LemonCake.png");
+  dish[7] = loadImage("assets/Cinnamonroll.png");
   
   for (int i = 0; i < cols; i++) {
     for (int j = 0; j < rows; j++) {
-      //image(wood, i * 100, j * 100+40);
-      board[i][j] = new Cell(i*100, j*100, 100, 100);
+      //image(wood, i * blk, j * blk+40);
+      board[i][j] = new Cell(i*blk, j*blk, blk, blk);
       
       // board array contains cell object which has a spot that holds the int referring to dessert image
       board[i][j].img = int(random(numTreats));
-      ps = new ParticleSystem(new PVector((i*100)/100, ((j*100)/100)+10));
+      ps = new ParticleSystem(new PVector((i*blk)/blk, ((j*blk)/blk)+10));
     }
   }
 }
@@ -56,12 +57,13 @@ void title() {
   rect(0, 0, width, height);
   image(dish[5], width/2, height/2+50);
   fill(220);
-  textSize(66);
-  text("Bunny", 20, height/2-50);
-  text("Bakery", 30, height/2);
+  textSize(99);
+  text("Bunny", 20, height/4);
+  text("Bakery", 60, height/4+100);
   textSize(16);
-  text("Click to begin", width/2-80, height-50);
-  text("left click / right click", 10, height-25);
+  text("Click to begin", width/2-80, height-120);
+  text("left click: swap horizontal", 10, height-55);
+  text("right click: swap vertical", 10, height-25);
 }
   
 void score() {
@@ -71,12 +73,76 @@ void score() {
   text("X"+ String.valueOf(chain), width-74, 26);
 }
 
+// maybe use _start _stop for better clearer control
+// i, col else row, i
+//void checkMatch(int _start, int _end, int _row, int _col, boolean _flipIter, boolean _fullLine) {
+void checkMatch() {
+  for (int i = 0; i < 1; i++ ) {
+    for (int col = 0; col < cols; col++) {
+      // left top hor 3
+      if (board[i][col].img == board[i+1][col].img && board[i+1][col].img == board[i+2][col].img && board[i+2][col].img == board[i+3][col].img) {
+        visible = false;
+        
+        if (!visible) {
+          visible = true;
+          spawnTreat(i, i+3, i, col, false);
+        }
+        
+      }else if (board[i][col].img == board[i+1][col].img && board[i+1][col].img == board[i+2][col].img) {
+        visible = false;
+        
+        if (!visible) {
+          visible = true;
+          spawnTreat(i, i+2, i, col, false);
+        }
+      
+      } else if (board[i+1][col].img == board[i+2][col].img && board[i+2][col].img == board[i+3][col].img) {
+        visible = false;
+  
+        if (!visible) {
+          visible = true;
+          spawnTreat(i+1, i+3, i, col, false);
+        }
+      }
+    }
+    for (int row = 0; row < rows; row++) {
+      // left top hor 3
+      if (board[row][i].img == board[row][i+1].img && board[row][i+1].img == board[row][i+2].img && board[row][i+2].img == board[row][i+3].img) {
+        visible = false;
+        
+        if (!visible) {
+          visible = true;
+          spawnTreat(i, i+3, row, i, true);
+        }
+        
+      }else if (board[row][i].img == board[row][i+1].img && board[row][i+1].img == board[row][i+2].img) {
+        visible = false;
+        
+        if (!visible) {
+          visible = true;
+          spawnTreat(i, i+2, row, i, true);
+        }
+      
+      } else if (board[row][i+1].img == board[row][i+2].img && board[row][i+2].img == board[row][i+3].img) {
+        visible = false;
+  
+        if (!visible) {
+          visible = true;
+          spawnTreat(i+1, i+3, row, i, true);
+        }
+      }
+    }
+  }
+
+}
+//ps.addParticle(new PVector(board[i][_col].x+50, board[i][_col].y+60));
+
 void draw() {
   background(80, 60, 35);
-  for (int x = 0; x < cols; x++) {
-    for (int y = 0; y < rows; y++) {
-      image(wood, x * 128, y * 120+100);
-      //image(wood, x * 100+55, y * 100+90);
+  for (int x = 0; x < cols*2; x++) {
+    for (int y = 0; y < rows*2; y++) {
+      image(wood, x * 128, y * 120+blk);
+      //image(wood, x * blk+55, y * blk+90);
     }
   }
   image(chainIco, width-15, 20);
@@ -84,7 +150,7 @@ void draw() {
   // scale images
   for (int i = 1; i < dish.length; i++) {
     if (visible) {
-      dish[i].resize(96, 0);
+      dish[i].resize(152, 0);
     } else {
       dish[i].resize(1, 0);
     }
@@ -93,63 +159,7 @@ void draw() {
   //background(200, 180, 90);
   
   if (frameCount % 60 == 0) { 
-    // test for matches
-    // check for horizontal matches
-    if (board[0][0].img == board[1][0].img && board[1][0].img == board[2][0].img) {
-      println("match horizontal top");
-      visible = false;
-      // spawn new treats in these spaces
-      if (!visible) {
-        visible = true;
-        spawnTreat(1, 0, false);
-      }
-    }
-    if (board[0][1].img == board[1][1].img && board[1][1].img == board[2][1].img) {
-      println("match horizontal middle");
-      visible = false;
-      // spawn new treats
-      if (!visible) {
-        visible = true;
-        spawnTreat(0, 1, false);
-      }
-    } else if (board[0][2].img == board[1][2].img && board[1][2].img == board[2][2].img) {
-      println("match horizontal bottom");
-      visible = false;
-      // spawn new treats
-      if (!visible) {
-        visible = true;
-        spawnTreat(1, 2, false);
-      }
-    }
-    // check for vertical matches
-    else if (board[0][0].img == board[0][1].img && board[0][1].img == board[0][2].img) {
-      println("match vertical left");
-      visible = false;
-      // spawn new treats
-      if (!visible) {
-        visible = true;
-        spawnTreat(0, 0, true);
-      }
-    } else if (board[1][0].img == board[1][1].img && board[1][1].img == board[1][2].img) {
-      println("match vertical middle");
-      visible = false;
-      // spawn new treats
-      if (!visible) {
-        visible = true;
-        spawnTreat(1, 0, true);
-      }
-    }
-    else if (board[2][0].img == board[2][1].img && board[2][1].img == board[2][2].img) {
-      println("match vertical right");
-      visible = false;
-      // spawn new treats
-      if (!visible) {
-        visible = true;
-        spawnTreat(2, 0, true);
-
-      }
-    } 
-    
+    checkMatch();
   }
 
   for (int i =0; i < cols; i++) {
@@ -167,18 +177,18 @@ void draw() {
   }
 }
 
-public void spawnTreat(int _row, int _col, Boolean _flipIter) {
+public void spawnTreat(int _start, int _end, int _row, int _col, Boolean _flipIter) {
   // boolean moves the iterator between row or col in grid
 
   if (clicks < 2) { 
     chain += 1;     
   } else { chain = 0; }
-  score += 100 + (chain * 50);
+  score += blk + (chain * 50);
   
-  for (int i = 0; i < 3; i++) {
+  for (int i = _start; i < _end+1; i++) {
     if (!_flipIter) {
       for (int k = 0; k < 50; k++) {
-        ps.addParticle(new PVector(board[i][_col].x+50, board[i][_col].y+60));
+        ps.addParticle(new PVector(board[i][_col].x+blk/2, board[i][_col].y+blk/2));
       }
       if (int(random(2)) == 1) {
         board[i][_col].img = int(random(numTreats));
@@ -186,7 +196,7 @@ public void spawnTreat(int _row, int _col, Boolean _flipIter) {
       }
     } else {
       for (int k = 0; k < 50; k++) {
-        ps.addParticle(new PVector(board[_row][i].x+50, board[_row][i].y+60));
+        ps.addParticle(new PVector(board[_row][i].x+blk/2, board[_row][i].y+blk/2));
       }
       if (int(random(2)) == 1) {
         board[_row][i].img = int(random(numTreats));
@@ -210,14 +220,14 @@ void checkMouse(Cell a) {
         // swap left 
         
         // test if x is >= 0, ie col zero or greater
-        if (int(a.x/100)-1 >= 0) {
-          a.img = board[int((a.x/100)-1)][int(a.y/100)].img;
-          board[int((a.x/100)-1)][int(a.y/100)].img = tmp;
+        if (int(a.x/blk)-1 >= 0) {
+          a.img = board[int((a.x/blk)-1)][int(a.y/blk)].img;
+          board[int((a.x/blk)-1)][int(a.y/blk)].img = tmp;
           selected = true;
 
         } else {
-          a.img = board[int((a.x/100)+1)][int(a.y/100)].img;
-          board[int((a.x/100+1))][int(a.y/100)].img = tmp;
+          a.img = board[int((a.x/blk)+1)][int(a.y/blk)].img;
+          board[int((a.x/blk+1))][int(a.y/blk)].img = tmp;
           selected = true;
         }
       } // switch the y cells
@@ -225,13 +235,13 @@ void checkMouse(Cell a) {
         //a.state = 0;
         clicks += 1;
         //int tmp = a.img;
-        if (int(a.y/100)-1 >= 0) {
-          a.img = board[int(a.x/100)][int((a.y/100)-1)].img;
-          board[int(a.x/100)][int((a.y/100)-1)].img = tmp;
+        if (int(a.y/blk)-1 >= 0) {
+          a.img = board[int(a.x/blk)][int((a.y/blk)-1)].img;
+          board[int(a.x/blk)][int((a.y/blk)-1)].img = tmp;
           selected = true;
         } else {
-          a.img = board[int(a.x/100)][int((a.y/100)+1)].img;
-          board[int(a.x/100)][int((a.y/100)+1)].img = tmp;
+          a.img = board[int(a.x/blk)][int((a.y/blk)+1)].img;
+          board[int(a.x/blk)][int((a.y/blk)+1)].img = tmp;
           selected = true;
         }
       }
@@ -239,7 +249,7 @@ void checkMouse(Cell a) {
     } 
   } else { selected = false; }
 }
-// needs review / consolidation
+
 class Cell {
   float x;
   float y;
@@ -269,25 +279,28 @@ class Particle {
   float life;
   
   Particle(PVector l) {
-    accel = new PVector(0, 0.005);
-    velo = new PVector(random(-1, 1), random(-1, 1));
+    // previous .005 and -1 , 1
+    accel = new PVector(0, 0.05);
+    velo = new PVector(random(-2, 2), random(-2, 2));
     pos = l.copy();
     life = 255.0;
   }
+  
   void run() {
     update();
     display();
+    //rings();
   }
   
   void update() {
     velo.add(accel);
     pos.add(velo);
-    life -= 3.0;
+    life -= 6.0;
   }
     
   void display() {
-    stroke(255, life);
-    rect(pos.x, pos.y, random(2,6), random(2, 6));
+    stroke(random(255),200, 220, life);
+    rect(pos.x, pos.y, random(5,10), random(5, 10));
   }
   
   boolean isDead() {

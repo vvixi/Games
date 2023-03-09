@@ -15,7 +15,6 @@ PImage wood = new PImage();
 PImage chainIco = new PImage();
 int score;
 ParticleSystem ps;
-//int [] boardState = new int[boardSize];
 Cell[][] board = new Cell[cols][rows];
 
 void setup() {
@@ -73,69 +72,45 @@ void score() {
   text("X"+ String.valueOf(chain), width-74, 26);
 }
 
-// maybe use _start _stop for better clearer control
-// i, col else row, i
-//void checkMatch(int _start, int _end, int _row, int _col, boolean _flipIter, boolean _fullLine) {
 void checkMatch() {
   for (int i = 0; i < 1; i++ ) {
     for (int col = 0; col < cols; col++) {
-      // left top hor 3
+      // add special cases like clearing entire board or multiple matches
+      
+      
+      // horizontal matches of 3 or 4 pieces
       if (board[i][col].img == board[i+1][col].img && board[i+1][col].img == board[i+2][col].img && board[i+2][col].img == board[i+3][col].img) {
         visible = false;
-        
-        if (!visible) {
-          visible = true;
-          spawnTreat(i, i+3, i, col, false);
-        }
+        spawnTreat(i, i+3, i, col, false);
         
       }else if (board[i][col].img == board[i+1][col].img && board[i+1][col].img == board[i+2][col].img) {
         visible = false;
-        
-        if (!visible) {
-          visible = true;
-          spawnTreat(i, i+2, i, col, false);
-        }
+        spawnTreat(i, i+2, i, col, false);
       
       } else if (board[i+1][col].img == board[i+2][col].img && board[i+2][col].img == board[i+3][col].img) {
         visible = false;
-  
-        if (!visible) {
-          visible = true;
-          spawnTreat(i+1, i+3, i, col, false);
-        }
+        spawnTreat(i+1, i+3, i, col, false);
       }
     }
+    
     for (int row = 0; row < rows; row++) {
-      // left top hor 3
+      // vertical matches of 3 or 4 pieces
       if (board[row][i].img == board[row][i+1].img && board[row][i+1].img == board[row][i+2].img && board[row][i+2].img == board[row][i+3].img) {
         visible = false;
-        
-        if (!visible) {
-          visible = true;
-          spawnTreat(i, i+3, row, i, true);
-        }
+        spawnTreat(i, i+3, row, i, true);
         
       }else if (board[row][i].img == board[row][i+1].img && board[row][i+1].img == board[row][i+2].img) {
         visible = false;
-        
-        if (!visible) {
-          visible = true;
-          spawnTreat(i, i+2, row, i, true);
-        }
+        spawnTreat(i, i+2, row, i, true);
       
       } else if (board[row][i+1].img == board[row][i+2].img && board[row][i+2].img == board[row][i+3].img) {
         visible = false;
-  
-        if (!visible) {
-          visible = true;
-          spawnTreat(i+1, i+3, row, i, true);
-        }
+        spawnTreat(i+1, i+3, row, i, true);
       }
     }
   }
-
 }
-//ps.addParticle(new PVector(board[i][_col].x+50, board[i][_col].y+60));
+
 
 void draw() {
   background(80, 60, 35);
@@ -156,7 +131,6 @@ void draw() {
     }
     
   }
-  //background(200, 180, 90);
   
   if (frameCount % 60 == 0) { 
     checkMatch();
@@ -184,7 +158,9 @@ public void spawnTreat(int _start, int _end, int _row, int _col, Boolean _flipIt
     chain += 1;     
   } else { chain = 0; }
   score += blk + (chain * 50);
-  
+  if (!visible) {
+    visible = true;
+  }
   for (int i = _start; i < _end+1; i++) {
     if (!_flipIter) {
       for (int k = 0; k < 50; k++) {
@@ -215,10 +191,9 @@ void checkMouse(Cell a) {
       int tmp = a.img;
       if (mouseButton == LEFT && mouseX > a.x && mouseX < a.x+a.w && mouseY > a.y && mouseY < a.y+a.h) {
         if (titleScreen) { titleScreen = false; }
-        //a.state = 2;
+
         clicks += 1;
-        // swap left 
-        
+        // swap x cells
         // test if x is >= 0, ie col zero or greater
         if (int(a.x/blk)-1 >= 0) {
           a.img = board[int((a.x/blk)-1)][int(a.y/blk)].img;
@@ -230,11 +205,10 @@ void checkMouse(Cell a) {
           board[int((a.x/blk+1))][int(a.y/blk)].img = tmp;
           selected = true;
         }
-      } // switch the y cells
+      } // swap y cells
       else if (mouseButton == RIGHT && mouseX > a.x && mouseX < a.x+a.w && mouseY > a.y && mouseY < a.y+a.h) {
-        //a.state = 0;
+        
         clicks += 1;
-        //int tmp = a.img;
         if (int(a.y/blk)-1 >= 0) {
           a.img = board[int(a.x/blk)][int((a.y/blk)-1)].img;
           board[int(a.x/blk)][int((a.y/blk)-1)].img = tmp;
@@ -322,7 +296,6 @@ class ParticleSystem {
   }
   
   void addParticle(PVector _orig) {
-    //particles.add(new Particle(origin));
     particles.add(new Particle(_orig));
   }
   

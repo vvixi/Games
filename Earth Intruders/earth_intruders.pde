@@ -1,22 +1,21 @@
 float t, blk, offs, noise;
-int i, row=10, col=10, score, grdSz, mode=0, wave=4, curLev=0, start, timeElapsed;
+int i, row=10, col=10, score, grdSz, mode=-2, wave=1, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
 ArrayList<Alien> aliens = new ArrayList<Alien>();
 //ArrayList<PowerUp> powerup = new ArrayList<PowerUp>();
 Player player;
+PFont font;
 PImage bg;
 ParticleSystem ps;
 ParticleSystem psP;
 // Space Invaders clone in P3 by vvixi
 // fixed: player pos, laser pos, player hitbox, player death, gameover, health, player particles
 
-// todo:
-// needs level progression tied in with patterns, reordered
-// needs additional enemies / enemy animations
-// needs powerups implemented
 
 void setup() {
   start = millis();
+  font = createFont("assets/moonhouse.ttf", 128);
+  textFont(font);
   size(700, 700);
   frameRate(30);
   smooth();
@@ -37,6 +36,17 @@ void keyPressed() {
   player.keyPressed();
 }
 void draw() {
+  bg = loadImage("assets/sb3.png");
+  //bg = loadImage("assets/sb" + wave + ".png");
+  bg.resize(700, 700);
+  if (mode == -2) { 
+    background(bg);
+    textSize(64);
+    fill(255);
+    text("E A R T H", 130, height/3); 
+    textSize(48);
+    text("I N T R U D E R S", 100, height/3+50);
+  }
   // update to switch / case, implement -1 as Game Over
   if (mode == -1) { 
     background(bg);
@@ -55,9 +65,9 @@ void draw() {
       start = millis();
       mode+=1;
     }
-    bg = loadImage("assets/sb3.png");
-    //bg = loadImage("assets/sb" + wave + ".png");
-    bg.resize(700, 700);
+    //bg = loadImage("assets/sb3.png");
+    ////bg = loadImage("assets/sb" + wave + ".png");
+    //bg.resize(700, 700);
     background(bg);
     textSize(28);
     fill(255);
@@ -128,7 +138,6 @@ void draw() {
       //rect(alien.xpos*blk, alien.ypos*blk, blk, blk);
       for (int j = 0; j < lasers.size(); j++) {
         Laser las = lasers.get(j);
-        // make the hitbox detection more universal
         //stroke(0, 100, 245);
 
         if (las.type == "player") {
@@ -308,6 +317,7 @@ class Player {
         String row = (String) sprite[i];
         for (int j = 0; j < row.length(); j++) {
           if (row.charAt(j) == '1') {
+            
             fill(0, 240, 100);
             rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
           } else if (row.charAt(j) == '2') {
@@ -335,17 +345,21 @@ class Player {
         if (mode == 1 && player.health > 0) {
           playerShoot();
           
-        } else if (mode == -1 && player.health <= 0) {
+        } else if (mode == -1 && player.health <= 0 || mode == -2) {
           mode = 0; aliens.clear(); lasers.clear(); health = 3; score = 0; wave = 1;
         }
       }
     }
   }
-  void playerShoot() { lasers.add(new Laser(player.xpos+.25, player.ypos, "player")); }
+  void playerShoot() { 
+    lasers.add(new Laser(player.xpos+.25, player.ypos, "player")); 
+  }
   void hit() { 
-    stroke(255); fill(255, 0, 0); 
-    if (health>0) { health-=1; 
+    if (health>0) { 
+      stroke(255); fill(255, 0, 0);
+      health-=1; 
     }
+    
     if (health<=0) { death();
     }
   }
@@ -384,7 +398,6 @@ class Particle {
     
   void display() {
     stroke(255, life);
-    //fill(255, life);
     rect(pos.x, pos.y, 2, 2);
   }
   

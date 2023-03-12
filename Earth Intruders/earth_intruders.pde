@@ -1,4 +1,5 @@
 // Space Invaders clone in P3 by vvixi
+// this update fixes bugs with timers and player laser position
 float t, blk, offs, noise;
 int i, row=10, col=10, score, grdSz, wave=0, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
@@ -21,7 +22,6 @@ public enum state {
 }
 
 void setup() {
-  //start = millis();
   font = createFont("assets/moonhouse.ttf", 128);
   textFont(font);
   size(700, 700);

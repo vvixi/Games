@@ -1,5 +1,4 @@
 // Space Invaders clone in P3 by vvixi
-// this update fixes bugs with timers and player's laser positioning
 float t, blk, offs, noise;
 int i, row=10, col=10, score, grdSz, wave=0, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
@@ -61,15 +60,14 @@ void draw() {
       break;
 
     case GAMEOVER:
-      // -1
-      //background(bg);
+
       textSize(28);
       fill(255);
       text("G  A  M  E    O  V  E  R", width/3, height/2); 
       break;
       
     case ROUNDSTART:
-      // this mode is before round start, 0
+      // this mode is before round start
       int wait = 2000;
       timeElapsed = millis() - start;
       if (timeElapsed > wait) {
@@ -86,8 +84,8 @@ void draw() {
       break;
       
     case PLAY:
-      // this mode indicates round is started, 1
-
+      // this mode indicates round is started
+      background(bg);
       if (aliens.size()-1 == 0) { 
         if (wave < 5) {
           wave++;   

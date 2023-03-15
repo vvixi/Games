@@ -18,6 +18,7 @@ ParticleSystem ps;
 Cell[][] board = new Cell[cols][rows];
 
 void setup() {
+
   font = createFont("assets/led_display-7.ttf", 10);
   textFont(font);
   rand = random(1);
@@ -91,10 +92,9 @@ void checkMatch() {
         visible = false;
         spawnTreat(i+1, i+3, i, col, false);
       }
-    }
-    
-    for (int row = 0; row < rows; row++) {
       // vertical matches of 3 or 4 pieces
+      // change iterator to cols
+      int row = col;
       if (board[row][i].img == board[row][i+1].img && board[row][i+1].img == board[row][i+2].img && board[row][i+2].img == board[row][i+3].img) {
         visible = false;
         spawnTreat(i, i+3, row, i, true);
@@ -117,7 +117,6 @@ void draw() {
   for (int x = 0; x < cols*2; x++) {
     for (int y = 0; y < rows*2; y++) {
       image(wood, x * 128, y * 120+blk);
-      //image(wood, x * blk+55, y * blk+90);
     }
   }
   image(chainIco, width-15, 20);

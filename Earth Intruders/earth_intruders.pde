@@ -1,10 +1,9 @@
 // Space Invaders clone in P3 by vvixi
-// this update fixes bugs with timers and player laser position
 float t, blk, offs, noise;
 int i, row=10, col=10, score, grdSz, wave=0, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
 ArrayList<Alien> aliens = new ArrayList<Alien>();
-//ArrayList<PowerUp> powerup = new ArrayList<PowerUp>();
+ArrayList<PowerUp> powerup = new ArrayList<PowerUp>();
 Player player;
 PFont font;
 PImage bg;
@@ -22,6 +21,7 @@ public enum state {
 }
 
 void setup() {
+  //start = millis();
   font = createFont("assets/moonhouse.ttf", 128);
   textFont(font);
   size(700, 700);
@@ -40,6 +40,10 @@ void spawn_aliens() {
     }
   }
 }
+void spawn_powerup() {
+  powerup.add(new PowerUp(int(random(col-1)), 0));
+}
+
 void keyPressed() {
   player.keyPressed();
 }
@@ -74,6 +78,8 @@ void draw() {
         
         spawn_aliens();
         start = millis();
+        // needs testing and revision
+        //spawn_powerup();
         _state = state.PLAY;
       }
 
@@ -138,7 +144,11 @@ void draw() {
             alien.moveMode = "static";
             break;
         }
-  
+        for (int k = 0; k < powerup.size(); k++) {
+          PowerUp powup = powerup.get(k);
+          powup.update();
+          powup.display();
+        }
         alien.display();
         alien.update();
         //rect(alien.xpos*blk, alien.ypos*blk, blk, blk);
@@ -462,5 +472,43 @@ class ParticleSystem {
         particles.remove(i);
       }
     }
+  }
+}
+
+class PowerUp {
+  float xpos, ypos, spd=0.005;
+  String moveMode;
+  String[] sprite = {
+    "00000000000",
+    "00111111000",
+    "00100000100",
+    "00100000010",
+    "00111111100",
+    "00100000000",
+    "00100000000",
+    "00100000000"};
+  PowerUp (float _xpos, float _ypos) {
+    xpos = _xpos;
+    ypos = _ypos;
+  }
+  void display() {
+    //draw sprite
+    stroke(0, 100, 245);
+    fill(200, 50, 0);
+    for (int i = 0; i < sprite.length; i++) {
+      String row = (String) sprite[i];
+      for (int j = 0; j < row.length(); j++) {
+        if (row.charAt(j) == '1') {
+          rect(xpos*blk+(j * 12)/2, ypos*blk+(i * 8)/2, 6, 4);
+        } else if (row.charAt(j) == '0') {
+          fill(0, 0, 200);
+          rect(xpos*blk+(j * 12)/2, ypos*blk+(i * 8)/2, 6, 4);
+        }
+      }
+    }
+
+  }
+  void update() {
+    ypos += spd;     
   }
 }

@@ -2,14 +2,14 @@
 // 
 // swap horizontally: left click
 // swap vertically: right click
-int ringSz = 0;
+int ringSz = 0, sz;
 int scoreTxt = 33;
 int clicks = 0, chain = 0, boardSize = 16;
 int cols = 4, rows = 4, numTreats = 7;
 IntList boardState = new IntList(boardSize);
 boolean selected, visible=true, titleScreen = true;
 PFont font;
-float blk, offs, rand;
+float blk, offs, rand, rotation;
 PImage [] dish = new PImage[8];
 PImage wood = new PImage();
 PImage chainIco = new PImage();
@@ -24,6 +24,7 @@ void setup() {
   rand = random(1);
   stroke(200);
   blk = width/cols;
+  sz = int(blk/3);
   offs = blk/2;
   size(620, 680);
   background(200, 160, 90);
@@ -70,9 +71,22 @@ void score() {
   fill(220);
   textSize(scoreTxt);
   text(String.valueOf(score), 12, 28); 
-  text("X"+ String.valueOf(chain), width-74, 26);
+  text("X"+ String.valueOf(chain), width-94, 26);
 }
-
+void spinner(float _locx, float _locy) {
+  fill(255);
+  pushMatrix();
+  translate(_locx*blk-80, _locy*blk-40);
+  rotate(rotation);
+  rect(0, 0, sz, sz);
+  popMatrix();
+  rotation+=1;
+  sz+=1;
+  if (sz > blk*2) {
+    sz = 0;
+  }
+  
+}
 void checkMatch() {
   for (int i = 0; i < 1; i++ ) {
     for (int col = 0; col < cols; col++) {
@@ -87,7 +101,7 @@ void checkMatch() {
       }else if (board[i][col].img == board[i+1][col].img && board[i+1][col].img == board[i+2][col].img) {
         visible = false;
         spawnTreat(i, i+2, i, col, false);
-      
+        
       } else if (board[i+1][col].img == board[i+2][col].img && board[i+2][col].img == board[i+3][col].img) {
         visible = false;
         spawnTreat(i+1, i+3, i, col, false);
@@ -141,6 +155,9 @@ void draw() {
       imageMode(CENTER);
       image(dish[board[i][j].img+1], i*blk+offs, j*blk+offs+15);
       checkMouse(board[i][j]);
+      //spinner(1,1);
+      //spinner(1,2);
+      //spinner(2,3);
     }
   } 
   ps.run();
@@ -152,7 +169,7 @@ void draw() {
 
 public void spawnTreat(int _start, int _end, int _row, int _col, Boolean _flipIter) {
   // boolean moves the iterator between row or col in grid
-
+  
   if (clicks < 2) { 
     chain += 1;     
   } else { chain = 0; }
@@ -162,6 +179,9 @@ public void spawnTreat(int _start, int _end, int _row, int _col, Boolean _flipIt
   }
   for (int i = _start; i < _end+1; i++) {
     if (!_flipIter) {
+      for (int j = 0; j < _end+1; j++) {
+        spinner(j, _col+1);
+      }
       for (int k = 0; k < 50; k++) {
         ps.addParticle(new PVector(board[i][_col].x+blk/2, board[i][_col].y+blk/2));
       }
@@ -170,6 +190,9 @@ public void spawnTreat(int _start, int _end, int _row, int _col, Boolean _flipIt
       } else { board[i][_col].img = board[int(random(3))][int(random(3))].img;
       }
     } else {
+      for (int j = 0; j < _end+1; j++) {
+        spinner(_row+1, j);
+      }
       for (int k = 0; k < 50; k++) {
         ps.addParticle(new PVector(board[_row][i].x+blk/2, board[_row][i].y+blk/2));
       }
@@ -181,6 +204,7 @@ public void spawnTreat(int _start, int _end, int _row, int _col, Boolean _flipIt
   }
   clicks = 0;
   scoreTxt = 33;
+  
 }
 
 void checkMouse(Cell a) {
@@ -234,13 +258,7 @@ class Cell {
     x = _x;
     y = _y;
     w = _w;
-    h = _h;
-    
-  }
-  void display() {
-
-    fill(255);
-    rect(x,y-blk,blk,blk);
+    h = _h; 
   }
 }
 

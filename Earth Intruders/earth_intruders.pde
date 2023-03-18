@@ -1,4 +1,6 @@
 // Space Invaders clone in P3 by vvixi
+// this update introduces support for power ups
+// more to come shortly
 float t, blk, offs, noise;
 int i, row=10, col=10, score, grdSz, wave=0, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
@@ -269,22 +271,33 @@ class Laser {
   float xpos, ypos, spd=.4;
   int pixelsize = 4;
   String type;
-  String[] sprite = {
+  int selectedLaser = 0;
+  String[][] sprite = {{
     "0112110",
     "0112110",
     "0112110",
     "0112110",
     "0112110",
-    "0112110"};
+    "0112110"},
+  {
+    "1122211",
+    "1122211",
+    "1122211",
+    "1122211",
+    "1122211",
+    "1122211"}};
 
   Laser(float _startX, float _startY, String _type) {
   xpos = _startX; ypos = _startY; type = _type;
   }
   void display() {
+    String row = (String) sprite[0][0];
     noStroke();
     // draw sprite
-    for (int i = 0; i < sprite.length; i++) {
-      String row = (String) sprite[i];
+    for (int i = 0; i < 7; i++) {
+      if (type == "player") {
+        row = (String) sprite[selectedLaser][0];
+      } 
       for (int j = 0; j < row.length(); j++) {
         if (row.charAt(j) == '1') {
           if (type == "player") {

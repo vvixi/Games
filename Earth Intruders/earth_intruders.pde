@@ -1,6 +1,10 @@
 // Space Invaders clone in P3 by vvixi
-// this update introduces support for power ups
-// more to come shortly
+// additional fixes to powerups
+// todo: additional enemy movement patterns
+// add sound
+// laser strength / enemy strength
+// enemy variety
+
 float t, blk, offs, noise;
 int i, row=10, col=10, score, grdSz, wave=0, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
@@ -42,8 +46,8 @@ void spawn_aliens() {
     }
   }
 }
-void spawn_powerup() {
-  powerup.add(new PowerUp(int(random(col-1)), 0));
+void spawn_powerup(int _locX, int _locY) {
+  powerup.add(new PowerUp(_locX, _locY));
 }
 
 void keyPressed() {
@@ -80,8 +84,7 @@ void draw() {
         
         spawn_aliens();
         start = millis();
-        // needs testing and revision
-        //spawn_powerup();
+
         _state = state.PLAY;
       }
 
@@ -150,43 +153,47 @@ void draw() {
           PowerUp powup = powerup.get(k);
           powup.update();
           powup.display();
+          if ((int(powup.ypos) == int(player.ypos)) && (int(powup.xpos) == int(player.xpos))) {
+            if (player.selectedLaser < 2) {
+              player.selectedLaser += 1;
+            }
+            powerup.remove(powup);
+          }
         }
         alien.display();
         alien.update();
+        // for debugging hitboxes
         //rect(alien.xpos*blk, alien.ypos*blk, blk, blk);
         for (int j = 0; j < lasers.size(); j++) {
           Laser las = lasers.get(j);
-          //stroke(0, 100, 245);
-  
+
           if (las.type == "player") {
             if ((int(las.ypos) == int(alien.ypos)) && (int(las.xpos) == int(alien.xpos)) ) {
-            //if ((int(las.ypos) == int(alien.ypos) && (int(las.xpos) >= int(alien.xpos-offs)) && (int(las.xpos) <= int(alien.xpos+offs)) )) {
-              //println("laser: ", int(las.xpos), "alien: ", alien.xpos);
-              //if (int(las.ypos) < int(alien.ypos+blk) && int(las.ypos) > int(alien.ypos-blk) && int(las.xpos) > int(alien.xpos-blk) && int(las.xpos) < int(alien.xpos+blk)) {
-
               // timer for particle effect
               for (int t =0; t < 60; t++) {
               //  //rect(x*blk, y*blk, blk, blk);
                 ps.addParticle();
                 ps.run();
               }
-              
+              // spawn powerups
+              if (random(200) > 198) {
+                spawn_powerup(int(alien.xpos), int(alien.ypos));
+              }
               lasers.remove(j);
               if (aliens.size()-1 > 0) {
                 aliens.remove(i);
                 score+=30;
                 
               }
+              
             }
               
           } else if (las.type == "enemy") 
             if ((int(las.ypos) == int(player.ypos)) && (int(las.xpos) == int(player.xpos))) {
-              //player.isHit = true;
+
               player.hit();
               lasers.remove(j);
-              
-              
-              //if (int(las.ypos) < int(alien.ypos+blk) && int(las.ypos) > int(alien.ypos-blk) && int(las.xpos) > int(alien.xpos-blk) && int(las.xpos) < int(alien.xpos+blk)) {
+                           
             } else if (las.ypos < -1 || _state != state.PLAY) { lasers.remove(j); 
           }   
         }      
@@ -271,8 +278,15 @@ class Laser {
   float xpos, ypos, spd=.4;
   int pixelsize = 4;
   String type;
-  int selectedLaser = 0;
   String[][] sprite = {{
+
+    "0012100",
+    "0012100",
+    "0012100",
+    "0012100",
+    "0012100",
+    "0012100"},
+  {
     "0112110",
     "0112110",
     "0112110",
@@ -296,7 +310,7 @@ class Laser {
     // draw sprite
     for (int i = 0; i < 7; i++) {
       if (type == "player") {
-        row = (String) sprite[selectedLaser][0];
+        row = (String) sprite[player.selectedLaser][0];
       } 
       for (int j = 0; j < row.length(); j++) {
         if (row.charAt(j) == '1') {
@@ -321,7 +335,7 @@ class Laser {
 
 class Player {
   float xpos, ypos;
-  int health;
+  int health, selectedLaser;
   String[] sprite = {
     "000010000",
     "000131000",
@@ -335,6 +349,7 @@ class Player {
     xpos = _xpos;
     ypos = _ypos;
     health = 2;
+    selectedLaser = 0;
     
   }
   
@@ -346,8 +361,7 @@ class Player {
     noise+=.2;
     float r = noise(noise) * 255;
     stroke(0, 100, 245);
-    //if (health > 0) {
-    //xpos = constrain(xpos, 0.0, 9.0);
+
     psP = new ParticleSystem(new PVector((xpos*blk)+blk/2, (ypos*blk)+blk/2));
     int pixelsize = 7;
     for (int i = 0; i < sprite.length; i++) {
@@ -387,7 +401,6 @@ class Player {
           _state = state.ROUNDSTART; aliens.clear(); lasers.clear(); health = 2; score = 0; wave = 1;
 
         } else if (_state == state.GAMEOVER) {
-          // fix this!
           
           int wait = 2000;
           timeElapsed = millis() - start;
@@ -512,6 +525,7 @@ class PowerUp {
       String row = (String) sprite[i];
       for (int j = 0; j < row.length(); j++) {
         if (row.charAt(j) == '1') {
+          fill(200, 100, 0);
           rect(xpos*blk+(j * 12)/2, ypos*blk+(i * 8)/2, 6, 4);
         } else if (row.charAt(j) == '0') {
           fill(0, 0, 200);
@@ -524,4 +538,5 @@ class PowerUp {
   void update() {
     ypos += spd;     
   }
+  
 }

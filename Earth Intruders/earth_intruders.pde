@@ -1,9 +1,21 @@
 // Space Invaders clone in P3 by vvixi
-// additional fixes to powerups
+// added hitflash on player
 // todo: additional enemy movement patterns
 // add sound
 // laser strength / enemy strength
 // enemy variety
+//import processing.sound.*;
+//SoundFile snd_laser;
+//SoundFile snd_power;
+//SoundFile snd_enemydeath;
+//SoundFile snd_pldeath;
+//AudioSnippet snd_laser;
+//Minim minim;
+
+//String laser = "assets/pew.mp3";
+//String power = "assets/powerup.mp3";
+//String enemy_death = "assets/enemy_death.mp3";
+//String player_death = "assets/player_death.mp3";
 
 float t, blk, offs, noise;
 int i, row=10, col=10, score, grdSz, wave=0, curLev=0, start, timeElapsed;
@@ -27,7 +39,14 @@ public enum state {
 }
 
 void setup() {
+  //minim = new Minim(this);
+  //snd_laser = minim.loadSnippet("assets/pew.mp3");
   //start = millis();
+  //snd_laser = new SoundFile(this, laser);
+  //snd_power = new SoundFile(this, power);
+  //snd_enemydeath = new SoundFile(this, enemy_death);
+  //snd_pldeath = new SoundFile(this, player_death);
+  
   font = createFont("assets/moonhouse.ttf", 128);
   textFont(font);
   size(700, 700);
@@ -153,7 +172,9 @@ void draw() {
           PowerUp powup = powerup.get(k);
           powup.update();
           powup.display();
+          
           if ((int(powup.ypos) == int(player.ypos)) && (int(powup.xpos) == int(player.xpos))) {
+            //snd_power.play();
             if (player.selectedLaser < 2) {
               player.selectedLaser += 1;
             }
@@ -275,7 +296,7 @@ class Alien {
   }
 }
 class Laser {
-  float xpos, ypos, spd=.4;
+  float xpos, ypos, spd=.3;
   int pixelsize = 4;
   String type;
   String[][] sprite = {{
@@ -334,6 +355,8 @@ class Laser {
 }
 
 class Player {
+  Boolean hitflash;
+  int hfOpacity = 255;
   float xpos, ypos;
   int health, selectedLaser;
   String[] sprite = {
@@ -350,6 +373,7 @@ class Player {
     ypos = _ypos;
     health = 2;
     selectedLaser = 0;
+    hitflash = false;
     
   }
   
@@ -369,6 +393,15 @@ class Player {
       for (int j = 0; j < row.length(); j++) {
         if (row.charAt(j) == '1') {
           fill(0, 240, 100);
+          if (hitflash) {
+            
+            fill(255, 0, 0, hfOpacity);
+            hfOpacity--;
+            if (hfOpacity == 80) {
+              player.hitflash = false;
+              hfOpacity = 255;
+            }
+          } 
           rect(xpos*blk+(j * pixelsize), ypos*blk+(i * pixelsize), pixelsize, pixelsize);
         } else if (row.charAt(j) == '2') {
           fill(r, 40, 0); 
@@ -393,6 +426,7 @@ class Player {
       else if(keyCode == UP) {
         // make sure player is allowed to shoot
         if (_state == state.PLAY && player.health >= 0) {
+          
           playerShoot();
         
         // start round if player shoots on Title screen or Game Over
@@ -414,10 +448,11 @@ class Player {
   }
   void playerShoot() { 
     float x = player.xpos+.25;
+    //snd_laser.play();
     lasers.add(new Laser(x, player.ypos, "player")); 
   }
   void hit() { 
-    fill(255, 0, 0);
+    hitflash = true;
     if (health>0) { 
       health-=1; 
     } else { 

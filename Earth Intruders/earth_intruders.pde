@@ -1,21 +1,9 @@
 // Space Invaders clone in P3 by vvixi
-// added hitflash on player
+// additional fixes to powerups
 // todo: additional enemy movement patterns
-// add sound
-// laser strength / enemy strength
-// enemy variety
-//import processing.sound.*;
-//SoundFile snd_laser;
-//SoundFile snd_power;
-//SoundFile snd_enemydeath;
-//SoundFile snd_pldeath;
-//AudioSnippet snd_laser;
-//Minim minim;
 
-//String laser = "assets/pew.mp3";
-//String power = "assets/powerup.mp3";
-//String enemy_death = "assets/enemy_death.mp3";
-//String player_death = "assets/player_death.mp3";
+import processing.sound.*;
+SoundFile[] sounds = new SoundFile[5];
 
 float t, blk, offs, noise;
 int i, row=10, col=10, score, grdSz, wave=0, curLev=0, start, timeElapsed;
@@ -39,13 +27,15 @@ public enum state {
 }
 
 void setup() {
-  //minim = new Minim(this);
-  //snd_laser = minim.loadSnippet("assets/pew.mp3");
-  //start = millis();
-  //snd_laser = new SoundFile(this, laser);
-  //snd_power = new SoundFile(this, power);
-  //snd_enemydeath = new SoundFile(this, enemy_death);
-  //snd_pldeath = new SoundFile(this, player_death);
+  Sound s = new Sound(this);
+  //s.list(); // you may need to choose a dif device number for your soundcard below
+  // uncomment above to list your available devices
+  s.outputDevice(1);
+  sounds[0] = new SoundFile(this, "assets/pew.wav");
+  sounds[1] = new SoundFile(this, "assets/powerup.wav");
+  sounds[2] = new SoundFile(this, "assets/enemy_death.wav");
+  sounds[3] = new SoundFile(this, "assets/player_hit.wav");
+  sounds[4] = new SoundFile(this, "assets/player_death.wav");
   
   font = createFont("assets/moonhouse.ttf", 128);
   textFont(font);
@@ -86,6 +76,9 @@ void draw() {
       text("E A R T H", 130, height/3); 
       textSize(48);
       text("I N T R U D E R S", 100, height/3+50);
+      textSize(20);
+      text("Move: Left and Right Arrows", 100, height-100);
+      text("Shoot: Up Arrow", 100, height-120);
       break;
 
     case GAMEOVER:
@@ -174,7 +167,7 @@ void draw() {
           powup.display();
           
           if ((int(powup.ypos) == int(player.ypos)) && (int(powup.xpos) == int(player.xpos))) {
-            //snd_power.play();
+            sounds[1].play();
             if (player.selectedLaser < 2) {
               player.selectedLaser += 1;
             }
@@ -191,6 +184,7 @@ void draw() {
           if (las.type == "player") {
             if ((int(las.ypos) == int(alien.ypos)) && (int(las.xpos) == int(alien.xpos)) ) {
               // timer for particle effect
+              sounds[2].play();
               for (int t =0; t < 60; t++) {
               //  //rect(x*blk, y*blk, blk, blk);
                 ps.addParticle();
@@ -296,17 +290,17 @@ class Alien {
   }
 }
 class Laser {
-  float xpos, ypos, spd=.3;
+  float xpos, ypos, spd=.4;
   int pixelsize = 4;
   String type;
   String[][] sprite = {{
 
-    "0012100",
-    "0012100",
-    "0012100",
-    "0012100",
-    "0012100",
-    "0012100"},
+    "0012000",
+    "0012000",
+    "0012000",
+    "0012000",
+    "0012000",
+    "0012000"},
   {
     "0112110",
     "0112110",
@@ -448,10 +442,11 @@ class Player {
   }
   void playerShoot() { 
     float x = player.xpos+.25;
-    //snd_laser.play();
+    sounds[0].play();
     lasers.add(new Laser(x, player.ypos, "player")); 
   }
   void hit() { 
+    sounds[3].play();
     hitflash = true;
     if (health>0) { 
       health-=1; 
@@ -462,6 +457,7 @@ class Player {
   }
 
   void death() {
+    sounds[4].play();
     // timer for particle effect
     for (int t =0; t < 120; t++) {
       psP.addParticle();

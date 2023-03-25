@@ -1,8 +1,9 @@
 // puzzle matching game in P3 by vvixi
 // 
+// this update adds sound
 // swap horizontally: left click
 // swap vertically: right click
-int ringSz = 0, sz;
+int ringSz = 0, sz, timeElapsed;
 int scoreTxt = 33;
 int clicks = 0, chain = 0, boardSize = 16;
 int cols = 4, rows = 4, numTreats = 7;
@@ -16,8 +17,19 @@ PImage chainIco = new PImage();
 int score;
 ParticleSystem ps;
 Cell[][] board = new Cell[cols][rows];
+import processing.sound.*;
+SoundFile[] sounds = new SoundFile[5];
 
 void setup() {
+  Sound s = new Sound(this);
+  //s.list(); // you may need to choose a dif device number for your soundcard below
+  // uncomment above to list your available devices
+  s.outputDevice(1);
+  sounds[0] = new SoundFile(this, "assets/chain1.wav");
+  sounds[1] = new SoundFile(this, "assets/chain2.wav");
+  sounds[2] = new SoundFile(this, "assets/chain3.wav");
+  sounds[3] = new SoundFile(this, "assets/chain4.wav");
+  sounds[4] = new SoundFile(this, "assets/snap.wav");
 
   font = createFont("assets/led_display-7.ttf", 10);
   textFont(font);
@@ -44,7 +56,6 @@ void setup() {
   
   for (int i = 0; i < cols; i++) {
     for (int j = 0; j < rows; j++) {
-      //image(wood, i * blk, j * blk+40);
       board[i][j] = new Cell(i*blk, j*blk, blk, blk);
       
       // board array contains cell object which has a spot that holds the int referring to dessert image
@@ -145,7 +156,7 @@ void draw() {
     
   }
   
-  if (frameCount % 60 == 0) { 
+  if (frameCount % 32 == 0) { 
     checkMatch();
   }
 
@@ -155,9 +166,7 @@ void draw() {
       imageMode(CENTER);
       image(dish[board[i][j].img+1], i*blk+offs, j*blk+offs+15);
       checkMouse(board[i][j]);
-      //spinner(1,1);
-      //spinner(1,2);
-      //spinner(2,3);
+
     }
   } 
   ps.run();
@@ -172,6 +181,7 @@ public void spawnTreat(int _start, int _end, int _row, int _col, Boolean _flipIt
   
   if (clicks < 2) { 
     chain += 1;     
+    sounds[chain%4].play();
   } else { chain = 0; }
   score += blk + (chain * 50);
   if (!visible) {
@@ -182,6 +192,7 @@ public void spawnTreat(int _start, int _end, int _row, int _col, Boolean _flipIt
       for (int j = 0; j < _end+1; j++) {
         spinner(j, _col+1);
       }
+      sounds[4].play();
       for (int k = 0; k < 50; k++) {
         ps.addParticle(new PVector(board[i][_col].x+blk/2, board[i][_col].y+blk/2));
       }
@@ -193,6 +204,7 @@ public void spawnTreat(int _start, int _end, int _row, int _col, Boolean _flipIt
       for (int j = 0; j < _end+1; j++) {
         spinner(_row+1, j);
       }
+      sounds[4].play();
       for (int k = 0; k < 50; k++) {
         ps.addParticle(new PVector(board[_row][i].x+blk/2, board[_row][i].y+blk/2));
       }
@@ -280,7 +292,6 @@ class Particle {
   void run() {
     update();
     display();
-    //rings();
   }
   
   void update() {

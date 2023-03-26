@@ -1,12 +1,13 @@
 // Space Invaders clone in P3 by vvixi
-// additional fixes to powerups
+// improved hit detection on enemies
 // todo: additional enemy movement patterns
+// power ups need improvement
 
 import processing.sound.*;
 SoundFile[] sounds = new SoundFile[5];
 
 float t, blk, offs, noise;
-int i, row=10, col=10, score, grdSz, wave=0, curLev=0, start, timeElapsed;
+int i, row=10, col=10, score, grdSz, wave=-1, curLev=0, start, timeElapsed;
 ArrayList<Laser> lasers = new ArrayList<Laser>();
 ArrayList<Alien> aliens = new ArrayList<Alien>();
 ArrayList<PowerUp> powerup = new ArrayList<PowerUp>();
@@ -122,7 +123,7 @@ void draw() {
       }
       
       // decoupled from aliens loop, fixes laser sizing/speed bug
-      for (int j = 1; j < lasers.size(); j++) {
+      for (int j = 0; j < lasers.size(); j++) {
         Laser las = lasers.get(j);
         las.update();
         las.display();
@@ -182,7 +183,8 @@ void draw() {
           Laser las = lasers.get(j);
 
           if (las.type == "player") {
-            if ((int(las.ypos) == int(alien.ypos)) && (int(las.xpos) == int(alien.xpos)) ) {
+
+            if ((int(las.ypos) == int(alien.ypos)) && (las.xpos > int(alien.xpos) && las.xpos < alien.xpos+.65)) {
               // timer for particle effect
               sounds[2].play();
               for (int t =0; t < 60; t++) {

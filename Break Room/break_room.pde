@@ -1,24 +1,51 @@
 // breakout clone in P3 by vvixi
-// todo: add sound files, fix collisions, correct particles, correct hitflash, add powerups
-
-int cols = 6, rows = 5;
+// todo: add sound files, fix collisions
+boolean blocks_set = false;
+int cols = 6, rows = 4;
 int lives = 3, score = 0;
 float blk;
 Ball ball;
 Player player;
 ArrayList<Block> blocks = new ArrayList<Block>();
+String[] level = { "1111111",
+                   "0000000",
+                   "1111111",
+                   "0000000",
+                   "1111111" };
+          
 PFont font;
 ParticleSystem ps;
 //import processing.sound.*;
 //SoundFile[] sounds = new SoundFile[5];
 
-private state _state = state.PLAY;
+private state _state = state.TITLE;
 
 public enum state {
   GAMEOVER,
   TITLE,
   PLAY,
   
+}
+
+void set_blocks() {
+  for (int i = 0; i < level.length; i++) {
+    String row = (String) level[i];
+    for (int j = 0; j < rows; j++) {
+      if (row.charAt(j) == '1') {
+        blocks.add(new Block(i, j+1));
+        ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
+      }
+    }
+  }
+  //blocks_set = true;
+  //for (int i = 0; i < cols; i++) {
+  //  for (int j = 0; j < rows; j++) {
+  //    //rect(i * blk, j * blk/3, blk, blk/3);
+  //    blocks.add(new Block(i, j+1));
+  //    ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
+  //  }
+  //}
+  blocks_set = true;
 }
 
 void setup() {
@@ -31,15 +58,8 @@ void setup() {
   textSize(20);
   blk = width/6;
   fill(120);
-  for (int i = 0; i < cols; i++) {
-    for (int j = 0; j < rows; j++) {
-      //rect(i * blk, j * blk/3, blk, blk/3);
-      blocks.add(new Block(i, j+1));
-      ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
-    }
-  }
-  ball = new Ball();
-  player = new Player(width/2, height-30);
+  set_blocks();
+  lives = 3;
   //font = createFont("assets/moonhouse.ttf", 128);
   //textFont(font);
   //Sound s = new Sound(this);
@@ -59,15 +79,18 @@ void setup() {
   //}
 }
 void mouseReleased() {
-  if (_state == _state.PLAY) {
+  if (_state == state.PLAY) {
     if (!ball.launched) {
       ball.launched = true;
     }
-  } else if (_state == _state.TITLE) {
-    _state = _state.PLAY;
+  } else if (_state == state.TITLE) {
+    _state = state.PLAY;
   } else if (_state == state.GAMEOVER) {
-    _state = _state.PLAY;
+    _state = state.TITLE;
   }
+}
+void load_level() {
+  
 }
 void draw() {
   background(40);
@@ -82,9 +105,18 @@ void draw() {
   
   switch(_state) {
     case TITLE:
-      textSize(140);
-      text("Break Room", 200, 200);
-      
+      show_title();
+      textSize(70);
+      //fill(0, 100, 240);
+      text("Click to play", 200, 400);
+      if (!blocks_set) {
+        set_blocks();
+      }
+      fill(0, 100, 240);
+      circle(540, 370, 70);
+      lives = 3;
+      ball = new Ball();
+      player = new Player(width/2, height-30);
       break;
     
     case PLAY:
@@ -92,43 +124,56 @@ void draw() {
         Block bk = blocks.get(i);
         bk.display();
       }
+      if (blocks.size() == 0) {
+        set_blocks();
+      }
       ball.update();
       ball.display();
       player.update();
       player.display();
-      textSize(30);
+      textSize(35);
       text("S C O R E : "+ String.valueOf(score), 50, 30);
+      for (int i = 0; i < lives; i++) {
+        circle(width - 70 + (i * 20), 20, 10);
+      }
+      ps.run();
       break;
 
       
     case GAMEOVER:
-    
+      blocks.clear();
+      blocks_set = false;
       fill(200);
       textSize(height/8);
       text("G A M E  O V E R", 200, height/2);
       break;
   }
-  for (int i = 0; i < lives; i++) {
-    circle(width - 70 + (i * 20), 20, 10);
-  }
+  
+  
+  
+  
+}
+void show_title() {
+  textSize(180);
+  text("Break Room", 150, 200);
   if (frameCount % 3 == 0) {
     fill(255);
   } else {
     fill(200);
   }
-  
-  ps.run();
-}
-void keyPressed() {
-  //player.keyPressed();
-
 }
 
 class Ball {
+  int num = 20;
+  int[] x = new int[num];
+  int[] y = new int[num];
+  int indexPos = 0;
+  String type = "standard";
   float posx, posy;
   int sz;
   int xspd, yspd;
   boolean launched;
+  // possible powerup types: multi ball, small ball, large ball, flaming ball, large paddle
   
   Ball() {
     posx = width/2;
@@ -155,45 +200,71 @@ class Ball {
     if (posy < 0) {
       yspd *= -1;
     }
-    if (posy > height) {
+    if (posy > height - 20) {
       launched = false;
       lives -= 1;
       if (lives < 1) {
-        _state = _state.GAMEOVER;
+        _state = state.GAMEOVER;
       }
     }
+    // collision with paddle
     if (ball.posx > player.posx - player.w / 2 && ball.posx < player.posx + player.w / 2) {
-      if (ball.posy > player.posy -5 && ball.posy < player.posy + player.h) {
+      if (ball.posy > player.posy -20 && ball.posy < player.posy + player.h) {
         player.flash = true;
         yspd *= -1;
         //xspd *= -1;
       }
     }
-    
+    // collision with blocks
     for (int i = 0; i < blocks.size(); i++) {
       Block bk = blocks.get(i);
-      if (ball.posx > bk.posx * blk && ball.posx < bk.posx * blk + blk) {
-        if (ball.posy > bk.posy * blk/3 && ball.posy < bk.posy * blk/3 + blk/3) {
-          bk.hitflash=true;
-          
-          for (int k = 0; k < 10; k++) {
-            ps.addParticle(new PVector(bk.posx * blk + blk /2, bk.posy * blk / 3 + blk /3));
+      
+      // if ball is at the same height
+      if (ball.posy > bk.posy * blk/3 && ball.posy < bk.posy * blk/3 + blk/3) {
+      // if ball is within the length of the block
+        if (ball.posx > bk.posx * blk && ball.posx < bk.posx * blk + blk) {
+
+          yspd *= -1;
+          for (int k = 0; k < 3; k++) {
+            ps.addParticle(new PVector(bk.posx * blk + blk /2, bk.posy * blk / 3 + blk /3 -15));
           }
           blocks.remove(bk);
           score += 150;
+
+        } 
+        if (ball.posx > bk.posx * blk && ball.posx < bk.posx * blk + blk) {
           xspd *= -1;
           yspd *= -1;
+          for (int k = 0; k < 3; k++) {
+            ps.addParticle(new PVector(bk.posx * blk + blk /2, bk.posy * blk / 3 + blk /3 -15));
+          }
+          blocks.remove(bk);
+          score += 150;
         }
-      }
-
-      
+      }   
     }
         
   }
   
   void display() {
-    fill(0, 100, 240);
-    circle(posx, posy, sz);
+    //fill(0, 100, 240);
+    
+    if (type == "standard") {
+      fill(200);
+      circle(posx, posy, sz);
+    }
+    if (type == "fire") {
+      stroke(240, 0, 0);
+      fill(240, 100, 0);
+      x[indexPos] = int(posx);
+      y[indexPos] = int(posy);
+      indexPos = (indexPos + 1) % num;
+      for (int i = 0; i < num; i++) {
+        int pos = (indexPos + i) % num;
+        float radius = (num + i) / 2.0;
+        ellipse(x[pos], y[pos], radius, radius);
+      }
+    }
   }
 }
 
@@ -217,6 +288,7 @@ class Player {
   }
   
   void display() {
+    //constrain(player.posx, w, width-w);
     rectMode(CENTER);
     fill(100);
     if (flash) {
@@ -286,7 +358,7 @@ class Particle {
   void display() {
     stroke(random(255),200, 220, life);
     //rect(pos.x, pos.y, random(2, 6), random(2, 6));
-    triangle(pos.x-random(-10, 10), pos.y-random(-10, 10), pos.x+random(-10, 10), pos.y+random(-10, 10), pos.x+(random(-10, 10)), pos.y+(random(-10, 10)));
+    triangle(pos.x-random(-10, 10), pos.y-random(-10, 10), pos.x-random(-10, 10), pos.y-random(-10, 10), pos.x-(random(-10, 10)), pos.y-(random(-10, 10)));
   }
   
   boolean isDead() {

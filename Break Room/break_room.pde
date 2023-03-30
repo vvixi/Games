@@ -1,17 +1,21 @@
 // breakout clone in P3 by vvixi
-// todo: add sound files, fix collisions
+// todo: add sound files, fix paddle side collisions, enable powerups, level progression
 boolean blocks_set = false;
-int cols = 6, rows = 4;
+int cols = 6, rows = 5;
 int lives = 3, score = 0;
+int timeElapsed, start;
 float blk;
-Ball ball;
+//Ball ball;
+
 Player player;
+ArrayList<Ball> balls = new ArrayList<Ball>();
 ArrayList<Block> blocks = new ArrayList<Block>();
 String[] level = { "1111111",
-                   "0000000",
+                   "1000001",
                    "1111111",
-                   "0000000",
-                   "1111111" };
+                   "1000001",
+                   "1111111",
+                   "1000001"};
           
 PFont font;
 ParticleSystem ps;
@@ -28,23 +32,24 @@ public enum state {
 }
 
 void set_blocks() {
-  for (int i = 0; i < level.length; i++) {
-    String row = (String) level[i];
-    for (int j = 0; j < rows; j++) {
-      if (row.charAt(j) == '1') {
-        blocks.add(new Block(i, j+1));
-        ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
-      }
-    }
-  }
-  //blocks_set = true;
-  //for (int i = 0; i < cols; i++) {
-  //  for (int j = 0; j < rows; j++) {
-  //    //rect(i * blk, j * blk/3, blk, blk/3);
-  //    blocks.add(new Block(i, j+1));
-  //    ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
+  // create level from level array
+  //for (int i = 0; i < level.length; i++) {
+  //  String row = (String) level[i];
+  //  for (int j = 0; j < level.length; j++) {
+  //    if (row.charAt(j) == '1') {
+  //      blocks.add(new Block(i, j+1));
+  //      ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
+  //    }
   //  }
   //}
+  //blocks_set = true;
+  for (int i = 0; i < cols; i++) {
+    for (int j = 0; j < rows; j++) {
+      //rect(i * blk, j * blk/3, blk, blk/3);
+      blocks.add(new Block(i, j+1));
+      ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
+    }
+  }
   blocks_set = true;
 }
 
@@ -60,8 +65,6 @@ void setup() {
   fill(120);
   set_blocks();
   lives = 3;
-  //font = createFont("assets/moonhouse.ttf", 128);
-  //textFont(font);
   //Sound s = new Sound(this);
   //s.list(); // you may need to choose a dif device number for your soundcard below
   // uncomment above to list your available devices
@@ -72,16 +75,19 @@ void setup() {
   //sounds[3] = new SoundFile(this, "assets/4.wav");
   //sounds[4] = new SoundFile(this, "assets/5.wav");
   //int wait = 2000;
-  //timeElapsed = millis() - start;
-  //if (timeElapsed > wait) {
-  //  spawn_aliens();
-  //  start = millis();
-  //}
+  
 }
 void mouseReleased() {
   if (_state == state.PLAY) {
-    if (!ball.launched) {
-      ball.launched = true;
+    //if (!ball.launched) {
+    //  ball.launched = true;
+    //}
+    //balls.get(0).launched = true;
+    if (balls.size() > 0) {
+      if (!balls.get(0).launched) {
+        balls.get(0).launched = true;
+        start = millis();
+      }
     }
   } else if (_state == state.TITLE) {
     _state = state.PLAY;
@@ -94,8 +100,9 @@ void load_level() {
 }
 void draw() {
   background(40);
-  
-  
+  //if (balls.size() > 0) {
+  //  println(balls.get(0).launched);
+  //}
   rectMode(CORNER);
   //for (int i = 0; i < cols; i++) {
   //  for (int j = 0; j < rows; j++) {
@@ -115,7 +122,9 @@ void draw() {
       fill(0, 100, 240);
       circle(540, 370, 70);
       lives = 3;
-      ball = new Ball();
+      if (balls.size() < 1) {
+        balls.add(new Ball(width/2, height -height/12));
+      }
       player = new Player(width/2, height-30);
       break;
     
@@ -127,8 +136,12 @@ void draw() {
       if (blocks.size() == 0) {
         set_blocks();
       }
-      ball.update();
-      ball.display();
+      for (int j = 0; j < balls.size(); j++) {
+        Ball bal = balls.get(j);
+        bal.update();
+        bal.display();
+      }
+
       player.update();
       player.display();
       textSize(35);
@@ -173,11 +186,13 @@ class Ball {
   int sz;
   int xspd, yspd;
   boolean launched;
-  // possible powerup types: multi ball, small ball, large ball, flaming ball, large paddle
+  int count = 1;
   
-  Ball() {
-    posx = width/2;
-    posy = height -height/12;
+  Ball(float _x, float _y) {
+    //posx = width/2;
+    //posy = height -height/12;
+    posx = _x;
+    posy = _y;
     sz = 10;
     xspd = 5;
     yspd = 5;
@@ -185,7 +200,7 @@ class Ball {
   }
   
   void update() {
-    
+
     if (!launched) {
       posx = player.posx;
       posy = player.posy - 20;
@@ -200,48 +215,67 @@ class Ball {
     if (posy < 0) {
       yspd *= -1;
     }
-    if (posy > height - 20) {
+    // count needs fixed
+    if (posy > height) {
       launched = false;
-      lives -= 1;
+      if (count < 2) {
+        lives -= 1;
+      } else {
+        count -= 1;
+      }
       if (lives < 1) {
         _state = state.GAMEOVER;
       }
     }
-    // collision with paddle
-    if (ball.posx > player.posx - player.w / 2 && ball.posx < player.posx + player.w / 2) {
-      if (ball.posy > player.posy -20 && ball.posy < player.posy + player.h) {
-        player.flash = true;
-        yspd *= -1;
-        //xspd *= -1;
-      }
-    }
-    // collision with blocks
-    for (int i = 0; i < blocks.size(); i++) {
-      Block bk = blocks.get(i);
-      
-      // if ball is at the same height
-      if (ball.posy > bk.posy * blk/3 && ball.posy < bk.posy * blk/3 + blk/3) {
-      // if ball is within the length of the block
-        if (ball.posx > bk.posx * blk && ball.posx < bk.posx * blk + blk) {
-
+    //circle(player.posx - player.w/2, player.posy, 10);
+    // collision with paddle, needs troubleshooting
+    for (int j = 0; j < balls.size(); j++) {
+      Ball ball = balls.get(j);
+        
+      if (ball.posy > player.posy -player.h && ball.posy < player.posy + player.h) {
+        if (ball.posx > player.posx - player.w / 2 && ball.posx < player.posx + player.w / 2) {     
+          //player.flash = true;
           yspd *= -1;
-          for (int k = 0; k < 3; k++) {
-            ps.addParticle(new PVector(bk.posx * blk + blk /2, bk.posy * blk / 3 + blk /3 -15));
-          }
-          blocks.remove(bk);
-          score += 150;
-
-        } 
-        if (ball.posx > bk.posx * blk && ball.posx < bk.posx * blk + blk) {
+        }
+        if (ball.posx < player.posx - player.w / 2 - sz && ball.posx > player.posx + player.w /2 + sz) {
           xspd *= -1;
           yspd *= -1;
-          for (int k = 0; k < 3; k++) {
-            ps.addParticle(new PVector(bk.posx * blk + blk /2, bk.posy * blk / 3 + blk /3 -15));
-          }
-          blocks.remove(bk);
-          score += 150;
         }
-      }   
+      }
+      // collision with blocks
+      for (int i = 0; i < blocks.size(); i++) {
+        Block bk = blocks.get(i);
+        
+        // if ball is at the same y location as brick
+        if (ball.posy > bk.posy * blk/3 && ball.posy < bk.posy * blk/3 + blk/3) {
+        // if ball is within the length of the block
+          if (ball.posx > bk.posx * blk && ball.posx < bk.posx * blk + blk) {
+            if (ball.type != "big") {
+              yspd *= -1;
+            }
+            for (int k = 0; k < 3; k++) {
+              ps.addParticle(new PVector(bk.posx * blk + blk /2, bk.posy * blk / 3 + blk /3 -15));
+            }
+            blocks.remove(bk);
+            score += 150;
+  
+          
+          } 
+          // collision with left side of block, then right
+          if (ball.posx < bk.posx * blk && ball.posx > bk.posx * blk - ball.sz || ball.posx > bk.posx * blk + blk && ball.posx < bk.posx * blk + blk + ball.sz) {
+            if (ball.type != "big") {
+              xspd *= -1;
+            }
+  
+            for (int k = 0; k < 3; k++) {
+              ps.addParticle(new PVector(bk.posx * blk + blk /2, bk.posy * blk / 3 + blk /3 -15));
+            }
+            blocks.remove(bk);
+            score += 150;
+          
+          }
+        }   
+      }
     }
         
   }
@@ -250,10 +284,42 @@ class Ball {
     //fill(0, 100, 240);
     
     if (type == "standard") {
-      fill(200);
+      sz = 10;
+      noStroke();
+      fill(180);
       circle(posx, posy, sz);
+      fill(250);
+      circle(posx+2, posy-2, sz-6);
+    }
+    if (type == "multi") {
+      //sz = 10;
+      //noStroke();
+      //fill(180);
+      //circle(posx, posy, sz);
+      //fill(250);
+      //circle(posx+2, posy-2, sz-6);
+      ////if (launched) {
+      //// needs fixed
+      //int wait = 400;
+      //timeElapsed = millis() - start;
+      //if (timeElapsed > wait) {
+      //  if (balls.size() < 2) {
+      //    balls.add(new Ball(random(3) + posx, posy - random(10)));
+      //    balls.get(0).launched = true;
+      //    balls.get(1).launched = true;
+      //  }
+      //}
+    }
+    if (type == "big") {
+      sz = 35;
+      noStroke();
+      fill(180);
+      circle(posx, posy, sz);
+      fill(250);
+      circle(posx+6, posy-6, sz-25);
     }
     if (type == "fire") {
+      sz = 12;
       stroke(240, 0, 0);
       fill(240, 100, 0);
       x[indexPos] = int(posx);
@@ -262,8 +328,15 @@ class Ball {
       for (int i = 0; i < num; i++) {
         int pos = (indexPos + i) % num;
         float radius = (num + i) / 2.0;
+        if (indexPos == 0) {
+          fill(180);
+        } else {
+          fill(240, 200, 0);
+        }
         ellipse(x[pos], y[pos], radius, radius);
       }
+      fill(180);
+      circle(posx, posy, sz);
     }
   }
 }

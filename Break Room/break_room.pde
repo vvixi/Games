@@ -6,7 +6,7 @@ int lives = 3, score = 0;
 int timeElapsed, start;
 float blk;
 //Ball ball;
-
+Powerup powerup;
 Player player;
 ArrayList<Ball> balls = new ArrayList<Ball>();
 ArrayList<Block> blocks = new ArrayList<Block>();
@@ -19,8 +19,8 @@ String[] level = { "1111111",
           
 PFont font;
 ParticleSystem ps;
-//import processing.sound.*;
-//SoundFile[] sounds = new SoundFile[5];
+import processing.sound.*;
+SoundFile[] sounds = new SoundFile[4];
 
 private state _state = state.TITLE;
 
@@ -65,15 +65,14 @@ void setup() {
   fill(120);
   set_blocks();
   lives = 3;
-  //Sound s = new Sound(this);
+  Sound s = new Sound(this);
   //s.list(); // you may need to choose a dif device number for your soundcard below
   // uncomment above to list your available devices
-  //s.outputDevice(1);
-  //sounds[0] = new SoundFile(this, "assets/1.wav");
-  //sounds[1] = new SoundFile(this, "assets/2.wav");
-  //sounds[2] = new SoundFile(this, "assets/3.wav");
-  //sounds[3] = new SoundFile(this, "assets/4.wav");
-  //sounds[4] = new SoundFile(this, "assets/5.wav");
+  s.outputDevice(1);
+  sounds[0] = new SoundFile(this, "assets/paddle.wav");
+  sounds[1] = new SoundFile(this, "assets/block.wav");
+  sounds[2] = new SoundFile(this, "assets/lostball.wav");
+  sounds[3] = new SoundFile(this, "assets/unbreakable.wav");
   //int wait = 2000;
   
 }
@@ -100,9 +99,6 @@ void load_level() {
 }
 void draw() {
   background(40);
-  //if (balls.size() > 0) {
-  //  println(balls.get(0).launched);
-  //}
   rectMode(CORNER);
   //for (int i = 0; i < cols; i++) {
   //  for (int j = 0; j < rows; j++) {
@@ -126,6 +122,7 @@ void draw() {
         balls.add(new Ball(width/2, height -height/12));
       }
       player = new Player(width/2, height-30);
+      //powerup = new Powerup(4 * blk, 0 * blk);
       break;
     
     case PLAY:
@@ -141,7 +138,8 @@ void draw() {
         bal.update();
         bal.display();
       }
-
+      powerup.display();
+      powerup.update();
       player.update();
       player.display();
       textSize(35);
@@ -168,7 +166,7 @@ void draw() {
 }
 void show_title() {
   textSize(180);
-  text("Break Room", 150, 200);
+  text("Break Room", 110, 200);
   if (frameCount % 3 == 0) {
     fill(255);
   } else {
@@ -217,6 +215,8 @@ class Ball {
     }
     // count needs fixed
     if (posy > height) {
+      sounds[2].play();
+      balls.get(0).type = "standard";
       launched = false;
       if (count < 2) {
         lives -= 1;
@@ -231,13 +231,17 @@ class Ball {
     // collision with paddle, needs troubleshooting
     for (int j = 0; j < balls.size(); j++) {
       Ball ball = balls.get(j);
-        
+      
+      // test for which side of paddle the ball hits
       if (ball.posy > player.posy -player.h && ball.posy < player.posy + player.h) {
         if (ball.posx > player.posx - player.w / 2 && ball.posx < player.posx + player.w / 2) {     
-          //player.flash = true;
+          sounds[0].play();
           yspd *= -1;
         }
+        
+        // detect hitting very edge of paddle, needs work
         if (ball.posx < player.posx - player.w / 2 - sz && ball.posx > player.posx + player.w /2 + sz) {
+          sounds[0].play();
           xspd *= -1;
           yspd *= -1;
         }
@@ -251,6 +255,7 @@ class Ball {
         // if ball is within the length of the block
           if (ball.posx > bk.posx * blk && ball.posx < bk.posx * blk + blk) {
             if (ball.type != "big") {
+              sounds[1].play();
               yspd *= -1;
             }
             for (int k = 0; k < 3; k++) {
@@ -264,6 +269,7 @@ class Ball {
           // collision with left side of block, then right
           if (ball.posx < bk.posx * blk && ball.posx > bk.posx * blk - ball.sz || ball.posx > bk.posx * blk + blk && ball.posx < bk.posx * blk + blk + ball.sz) {
             if (ball.type != "big") {
+              sounds[1].play();
               xspd *= -1;
             }
   
@@ -371,6 +377,32 @@ class Player {
     rect(posx, posy, w, h);
   }
 
+}
+class Powerup {
+  float posx, posy;
+  
+  Powerup(float _x, float _y) {
+    posx = _x;
+    posy = _y;
+  }
+  
+  void update() {
+    posy+=5;
+    // collision with player
+    if (posy > player.posy -player.h && posy < player.posy + player.h) {
+      if (posx > player.posx - player.w / 2 && posx < player.posx + player.w / 2) {
+        balls.get(0).type = "big";
+      }
+    }
+  }
+  
+  void display() {
+    fill(240, 100, 0);
+    for (int i = 0; i < 20; i++) {
+      circle(posx+i, posy, 20);
+    }
+  }
+  
 }
 
 class Block {

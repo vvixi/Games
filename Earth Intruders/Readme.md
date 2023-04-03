@@ -11,8 +11,3 @@ My take on this game includes the following features (and more!):
 * level progression in waves
 * particle effects 
 * sound effects
-
-I may add a few finishing touches such as power-ups later.
-
-Known issues:
-* enemy hitbox needs expanded to aid player

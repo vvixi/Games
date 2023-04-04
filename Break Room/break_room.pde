@@ -1,22 +1,17 @@
 // breakout clone in P3 by vvixi
-// todo: add sound files, fix paddle side collisions, enable powerups, level progression
+// todo: fix paddle side collisions, enable powerups, level progression
 boolean blocks_set = false;
 int cols = 6, rows = 5;
 int lives = 3, score = 0;
-int timeElapsed, start;
+int timeElapsed, start, curLevel = 1;
 float blk;
 //Ball ball;
 Powerup powerup;
 Player player;
 ArrayList<Ball> balls = new ArrayList<Ball>();
 ArrayList<Block> blocks = new ArrayList<Block>();
-String[] level = { "1111111",
-                   "1000001",
-                   "1111111",
-                   "1000001",
-                   "1111111",
-                   "1000001"};
-          
+
+String[] level;
 PFont font;
 ParticleSystem ps;
 import processing.sound.*;
@@ -33,23 +28,24 @@ public enum state {
 
 void set_blocks() {
   // create level from level array
-  //for (int i = 0; i < level.length; i++) {
-  //  String row = (String) level[i];
-  //  for (int j = 0; j < level.length; j++) {
-  //    if (row.charAt(j) == '1') {
-  //      blocks.add(new Block(i, j+1));
-  //      ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
-  //    }
-  //  }
-  //}
-  //blocks_set = true;
+  level = loadStrings("level.txt");
   for (int i = 0; i < cols; i++) {
+    String row = (String) level[i];
     for (int j = 0; j < rows; j++) {
-      //rect(i * blk, j * blk/3, blk, blk/3);
-      blocks.add(new Block(i, j+1));
-      ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
+      if (row.charAt(j) == '1') {
+        blocks.add(new Block(i, j+1));
+        ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
+      }
     }
   }
+  //blocks_set = true;
+  //for (int i = 0; i < cols; i++) {
+  //  for (int j = 0; j < rows; j++) {
+  //    //rect(i * blk, j * blk/3, blk, blk/3);
+  //    blocks.add(new Block(i, j+1));
+  //    ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
+  //  }
+  //}
   blocks_set = true;
 }
 
@@ -74,6 +70,8 @@ void setup() {
   sounds[2] = new SoundFile(this, "assets/lostball.wav");
   sounds[3] = new SoundFile(this, "assets/unbreakable.wav");
   //int wait = 2000;
+  //saveStrings("test.txt", level);
+  
   
 }
 void mouseReleased() {
@@ -138,8 +136,10 @@ void draw() {
         bal.update();
         bal.display();
       }
-      powerup.display();
-      powerup.update();
+      if (powerup != null) {
+        powerup.display();
+        powerup.update();
+      }
       player.update();
       player.display();
       textSize(35);

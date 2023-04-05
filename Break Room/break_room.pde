@@ -10,8 +10,8 @@ Powerup powerup;
 Player player;
 ArrayList<Ball> balls = new ArrayList<Ball>();
 ArrayList<Block> blocks = new ArrayList<Block>();
-
 String[] level;
+
 PFont font;
 ParticleSystem ps;
 import processing.sound.*;
@@ -27,25 +27,26 @@ public enum state {
 }
 
 void set_blocks() {
-  // create level from level array
+  int start = 0, end = start+6;
+  if (curLevel == 2) { start = 6; }
+  else if (curLevel == 3) { start = 12; }
+  else if (curLevel == 4) { start = 18; }
+  else if (curLevel == 3) { start = 24; }
+  // 6 levels
+  // 0:6 6:12 12:18 18:24 24:30 
+  // create level from level file
   level = loadStrings("level.txt");
-  for (int i = 0; i < cols; i++) {
+  //println(level.length);
+  for (int i = start; i < end; i++) {
     String row = (String) level[i];
     for (int j = 0; j < rows; j++) {
+      //String row = (String) level[j];
       if (row.charAt(j) == '1') {
-        blocks.add(new Block(i, j+1));
+        blocks.add(new Block(i-start, j+1));
         ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
       }
     }
   }
-  //blocks_set = true;
-  //for (int i = 0; i < cols; i++) {
-  //  for (int j = 0; j < rows; j++) {
-  //    //rect(i * blk, j * blk/3, blk, blk/3);
-  //    blocks.add(new Block(i, j+1));
-  //    ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
-  //  }
-  //}
   blocks_set = true;
 }
 
@@ -70,7 +71,7 @@ void setup() {
   sounds[2] = new SoundFile(this, "assets/lostball.wav");
   sounds[3] = new SoundFile(this, "assets/unbreakable.wav");
   //int wait = 2000;
-  //saveStrings("test.txt", level);
+  //saveStrings("test.txt", level[0]);
   
   
 }
@@ -129,6 +130,7 @@ void draw() {
         bk.display();
       }
       if (blocks.size() == 0) {
+        curLevel++;
         set_blocks();
       }
       for (int j = 0; j < balls.size(); j++) {

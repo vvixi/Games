@@ -3,7 +3,7 @@
 boolean blocks_set = false;
 int cols = 6, rows = 5;
 int lives = 3, score = 0;
-int timeElapsed, start, curLevel = 1;
+int timeElapsed, start = 0, curLevel = 1;
 float blk;
 //Ball ball;
 Powerup powerup;
@@ -27,11 +27,12 @@ public enum state {
 }
 
 void set_blocks() {
-  int start = 0, end = start+6;
-  if (curLevel == 2) { start = 6; }
-  else if (curLevel == 3) { start = 12; }
-  else if (curLevel == 4) { start = 18; }
-  else if (curLevel == 3) { start = 24; }
+  int end = start+6;
+  //if (curLevel == 2) { start = 6; }
+  //else if (curLevel == 3) { start = 12; }
+  //else if (curLevel == 4) { start = 18; }
+  //else if (curLevel == 3) { start = 24; }
+  //if (curLevel > 1) { start += 6; }
   // 6 levels
   // 0:6 6:12 12:18 18:24 24:30 
   // create level from level file
@@ -130,7 +131,9 @@ void draw() {
         bk.display();
       }
       if (blocks.size() == 0) {
+        balls.get(0).launched = false;
         curLevel++;
+        start+=6;
         set_blocks();
       }
       for (int j = 0; j < balls.size(); j++) {
@@ -144,8 +147,8 @@ void draw() {
       }
       player.update();
       player.display();
-      textSize(35);
-      text("S C O R E : "+ String.valueOf(score), 50, 30);
+      textSize(40);
+      text(String.valueOf(score), 50, 30);
       for (int i = 0; i < lives; i++) {
         circle(width - 70 + (i * 20), 20, 10);
       }

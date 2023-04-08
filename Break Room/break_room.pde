@@ -1,9 +1,9 @@
 // breakout clone in P3 by vvixi
-// todo: fix paddle side collisions, enable powerups, level progression
+// this version includes updates to paddle collisions, level progression, and powerups
 boolean blocks_set = false;
 int cols = 6, rows = 5;
 int lives = 3, score = 0;
-int timeElapsed, start = 0, curLevel = 1;
+int timeElapsed, start, levStart, curLevel = 1;
 float blk;
 //Ball ball;
 Powerup powerup;
@@ -13,7 +13,7 @@ ArrayList<Block> blocks = new ArrayList<Block>();
 String[] level;
 
 PFont font;
-ParticleSystem ps;
+ParticleSystem ps, ps2;
 import processing.sound.*;
 SoundFile[] sounds = new SoundFile[4];
 
@@ -27,23 +27,18 @@ public enum state {
 }
 
 void set_blocks() {
-  int end = start+6;
-  //if (curLevel == 2) { start = 6; }
-  //else if (curLevel == 3) { start = 12; }
-  //else if (curLevel == 4) { start = 18; }
-  //else if (curLevel == 3) { start = 24; }
-  //if (curLevel > 1) { start += 6; }
-  // 6 levels
+ 
+  int end = levStart+6;
   // 0:6 6:12 12:18 18:24 24:30 
   // create level from level file
   level = loadStrings("level.txt");
   //println(level.length);
-  for (int i = start; i < end; i++) {
+  for (int i = levStart; i < end; i++) {
     String row = (String) level[i];
     for (int j = 0; j < rows; j++) {
       //String row = (String) level[j];
       if (row.charAt(j) == '1') {
-        blocks.add(new Block(i-start, j+1));
+        blocks.add(new Block(i-levStart, j+1));
         ps = new ParticleSystem(new PVector((i*blk), ((j)*blk)));
       }
     }
@@ -75,13 +70,11 @@ void setup() {
   //saveStrings("test.txt", level[0]);
   
   
+  
 }
 void mouseReleased() {
   if (_state == state.PLAY) {
-    //if (!ball.launched) {
-    //  ball.launched = true;
-    //}
-    //balls.get(0).launched = true;
+
     if (balls.size() > 0) {
       if (!balls.get(0).launched) {
         balls.get(0).launched = true;
@@ -122,10 +115,16 @@ void draw() {
         balls.add(new Ball(width/2, height -height/12));
       }
       player = new Player(width/2, height-30);
+      ps2 = new ParticleSystem(new PVector(player.posx, player.posy));
+      score = 0;
       //powerup = new Powerup(4 * blk, 0 * blk);
       break;
     
     case PLAY:
+      if (powerup != null) {
+        powerup.display();
+        powerup.update();
+      }
       for (int i = 0; i < blocks.size(); i++) {
         Block bk = blocks.get(i);
         bk.display();
@@ -133,7 +132,7 @@ void draw() {
       if (blocks.size() == 0) {
         balls.get(0).launched = false;
         curLevel++;
-        start+=6;
+        levStart+=6;
         set_blocks();
       }
       for (int j = 0; j < balls.size(); j++) {
@@ -141,10 +140,7 @@ void draw() {
         bal.update();
         bal.display();
       }
-      if (powerup != null) {
-        powerup.display();
-        powerup.update();
-      }
+      
       player.update();
       player.display();
       textSize(40);
@@ -153,6 +149,7 @@ void draw() {
         circle(width - 70 + (i * 20), 20, 10);
       }
       ps.run();
+      ps2.run();
       break;
 
       
@@ -203,6 +200,8 @@ class Ball {
   }
   
   void update() {
+    // posy 575.0 is trapped
+    //println(posy);
 
     if (!launched) {
       posx = player.posx;
@@ -232,6 +231,8 @@ class Ball {
         _state = state.GAMEOVER;
       }
     }
+    //fill(255);
+    //rect(player.posx - player.w /2 - balls.get(0).sz, player.posx + player.w / 2, player.w, player.h);
     //circle(player.posx - player.w/2, player.posy, 10);
     // collision with paddle, needs troubleshooting
     for (int j = 0; j < balls.size(); j++) {
@@ -244,8 +245,8 @@ class Ball {
           yspd *= -1;
         }
         
-        // detect hitting very edge of paddle, needs work
-        if (ball.posx < player.posx - player.w / 2 - sz && ball.posx > player.posx + player.w /2 + sz) {
+        // detect hitting very edge of paddle
+        if (ball.posx > player.posx - player.w / 2 - sz && ball.posx < player.posx - player.w / 2 || ball.posx > player.posx + player.w /2 && ball.posx < player.posx + player.w /2 + sz) {
           sounds[0].play();
           xspd *= -1;
           yspd *= -1;
@@ -259,8 +260,9 @@ class Ball {
         if (ball.posy > bk.posy * blk/3 && ball.posy < bk.posy * blk/3 + blk/3) {
         // if ball is within the length of the block
           if (ball.posx > bk.posx * blk && ball.posx < bk.posx * blk + blk) {
-            if (ball.type != "big") {
-              sounds[1].play();
+            sounds[1].play();
+            
+            if (ball.type != "big" && ball.type != "fire") {
               yspd *= -1;
             }
             for (int k = 0; k < 3; k++) {
@@ -273,8 +275,9 @@ class Ball {
           } 
           // collision with left side of block, then right
           if (ball.posx < bk.posx * blk && ball.posx > bk.posx * blk - ball.sz || ball.posx > bk.posx * blk + blk && ball.posx < bk.posx * blk + blk + ball.sz) {
-            if (ball.type != "big") {
-              sounds[1].play();
+            sounds[1].play();
+            
+            if (ball.type != "big" && ball.type != "fire") {
               xspd *= -1;
             }
   
@@ -396,13 +399,16 @@ class Powerup {
     // collision with player
     if (posy > player.posy -player.h && posy < player.posy + player.h) {
       if (posx > player.posx - player.w / 2 && posx < player.posx + player.w / 2) {
-        balls.get(0).type = "big";
+        for (int k = 0; k < 8; k++) {
+          ps2.addParticle(new PVector(player.posx, player.posy-25));
+        }
+        balls.get(0).type = "fire";
       }
     }
   }
   
   void display() {
-    fill(240, 100, 0);
+    //fill(240, 100, 0);
     for (int i = 0; i < 20; i++) {
       circle(posx+i, posy, 20);
     }

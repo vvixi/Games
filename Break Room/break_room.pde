@@ -5,7 +5,6 @@ int cols = 6, rows = 5;
 int lives = 3, score = 0;
 int timeElapsed, start, levStart, curLevel = 1;
 float blk;
-//Ball ball;
 Powerup powerup;
 Player player;
 ArrayList<Ball> balls = new ArrayList<Ball>();
@@ -23,7 +22,6 @@ public enum state {
   GAMEOVER,
   TITLE,
   PLAY,
-  
 }
 
 void set_blocks() {
@@ -66,10 +64,6 @@ void setup() {
   sounds[1] = new SoundFile(this, "assets/block.wav");
   sounds[2] = new SoundFile(this, "assets/lostball.wav");
   sounds[3] = new SoundFile(this, "assets/unbreakable.wav");
-  //int wait = 2000;
-  //saveStrings("test.txt", level[0]);
-  
-  
   
 }
 void mouseReleased() {
@@ -93,11 +87,6 @@ void load_level() {
 void draw() {
   background(40);
   rectMode(CORNER);
-  //for (int i = 0; i < cols; i++) {
-  //  for (int j = 0; j < rows; j++) {
-  //    rect(i * blk, j * blk/3, blk, blk/3);
-  //  }
-  //}
   
   switch(_state) {
     case TITLE:
@@ -117,7 +106,7 @@ void draw() {
       player = new Player(width/2, height-30);
       ps2 = new ParticleSystem(new PVector(player.posx, player.posy));
       score = 0;
-      //powerup = new Powerup(4 * blk, 0 * blk);
+      powerup = new Powerup(4 * blk, 0 * blk);
       break;
     
     case PLAY:
@@ -144,7 +133,7 @@ void draw() {
       player.update();
       player.display();
       textSize(40);
-      text(String.valueOf(score), 50, 30);
+      text(String.valueOf(score), 50, 35);
       for (int i = 0; i < lives; i++) {
         circle(width - 70 + (i * 20), 20, 10);
       }
@@ -161,10 +150,7 @@ void draw() {
       text("G A M E  O V E R", 200, height/2);
       break;
   }
-  
-  
-  
-  
+   
 }
 void show_title() {
   textSize(180);
@@ -231,10 +217,7 @@ class Ball {
         _state = state.GAMEOVER;
       }
     }
-    //fill(255);
-    //rect(player.posx - player.w /2 - balls.get(0).sz, player.posx + player.w / 2, player.w, player.h);
-    //circle(player.posx - player.w/2, player.posy, 10);
-    // collision with paddle, needs troubleshooting
+
     for (int j = 0; j < balls.size(); j++) {
       Ball ball = balls.get(j);
       
@@ -295,7 +278,6 @@ class Ball {
   }
   
   void display() {
-    //fill(0, 100, 240);
     
     if (type == "standard") {
       sz = 10;
@@ -409,8 +391,10 @@ class Powerup {
   
   void display() {
     //fill(240, 100, 0);
-    for (int i = 0; i < 20; i++) {
-      circle(posx+i, posy, 20);
+    if (posy < player.posy) {
+      for (int i = 0; i < 20; i++) {
+        circle(posx+i, posy, 20);
+      }
     }
   }
   
@@ -424,10 +408,6 @@ class Block {
   Block(float _posx, float _posy) {
     posx = _posx;
     posy = _posy;
-  }
-  
-  void update() {
-    
   }
 
   void display() {

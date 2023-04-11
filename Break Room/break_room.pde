@@ -106,7 +106,6 @@ void draw() {
       player = new Player(width/2, height-30);
       ps2 = new ParticleSystem(new PVector(player.posx, player.posy));
       score = 0;
-      powerup = new Powerup(4 * blk, 0 * blk);
       break;
     
     case PLAY:
@@ -243,6 +242,9 @@ class Ball {
         if (ball.posy > bk.posy * blk/3 && ball.posy < bk.posy * blk/3 + blk/3) {
         // if ball is within the length of the block
           if (ball.posx > bk.posx * blk && ball.posx < bk.posx * blk + blk) {
+            if (random(2) >= 1.85 && ball.type == "standard") {
+                powerup = new Powerup(bk.posx * blk + blk /2 , bk.posy * blk /3 + blk / 3);
+              }
             sounds[1].play();
             
             if (ball.type != "big" && ball.type != "fire") {

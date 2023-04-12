@@ -21,6 +21,7 @@ private state _state = state.TITLE;
 public enum state {
   GAMEOVER,
   TITLE,
+  LEVEL,
   PLAY,
 }
 
@@ -133,6 +134,7 @@ void draw() {
       player.display();
       textSize(40);
       text(String.valueOf(score), 50, 35);
+      text("Level " + str(curLevel), width/2, 35);
       for (int i = 0; i < lives; i++) {
         circle(width - 70 + (i * 20), 20, 10);
       }
@@ -174,8 +176,7 @@ class Ball {
   int count = 1;
   
   Ball(float _x, float _y) {
-    //posx = width/2;
-    //posy = height -height/12;
+
     posx = _x;
     posy = _y;
     sz = 10;
@@ -386,7 +387,11 @@ class Powerup {
         for (int k = 0; k < 8; k++) {
           ps2.addParticle(new PVector(player.posx, player.posy-25));
         }
-        balls.get(0).type = "fire";
+        if (int(random(3)) > 1) {
+          balls.get(0).type = "fire";
+        } else {
+          balls.get(0).type = "big";
+        }
       }
     }
   }

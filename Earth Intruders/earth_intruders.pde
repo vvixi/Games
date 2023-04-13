@@ -1,7 +1,5 @@
 // Space Invaders clone in P3 by vvixi
-// improved hit detection on enemies
-// todo: additional enemy movement patterns
-// power ups need improvement
+// improved hit detection on enemies and enemy movement
 
 import processing.sound.*;
 SoundFile[] sounds = new SoundFile[5];
@@ -156,6 +154,9 @@ void draw() {
             alien.moveMode = "snake";
             break;
           case 4:
+            alien.moveMode = "descending8";
+            break;
+          case 5:
             alien.moveMode = "aggro";
             break;
           default:
@@ -274,22 +275,32 @@ class Alien {
     if (moveMode == "snake") {
       if (xpos > 9) { dir = -1; ypos += .5; spd += .0025; }
       if (xpos < 0) { dir = 1; ypos += .5; }
-      xpos+=dir*spd;
+
 
     }   
     if (moveMode == "loop") {
       if (xpos > 9) { dir = -1; ypos += .5; spd += .0025; }
       if (xpos < 0) { dir = 1; ypos -= .5; }
-      xpos+=dir*spd;
+
     }   
     if (moveMode == "line") {
       if (xpos > 9 || xpos < 0) { dir *= -1; spd+= .0025; }
-      xpos+=dir*spd;
+      
     }   
     if (moveMode == "aggro") {
       ypos += .005;
+      
+    }
+    if (moveMode == "descending8") {
+      if (xpos > 9) { dir = -1; ypos += 1.5; spd += .0025; }
+      if (xpos < 0) { dir = 1; ypos -= .5; }
+
+    }
+    if (moveMode != "static") {
+      xpos+=dir*spd;
     }
   }
+  
 }
 class Laser {
   float xpos, ypos, spd=.4;
@@ -428,7 +439,7 @@ class Player {
         // start round if player shoots on Title screen or Game Over
         } else if (_state == state.TITLE) {
           start = millis();
-          _state = state.ROUNDSTART; aliens.clear(); lasers.clear(); health = 2; score = 0; wave = 1;
+          _state = state.ROUNDSTART; aliens.clear(); lasers.clear(); health = 2; score = 0; wave = 0;
 
         } else if (_state == state.GAMEOVER) {
           

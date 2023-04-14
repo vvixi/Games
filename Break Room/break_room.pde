@@ -1,5 +1,7 @@
-// breakout clone in P3 by vvixi
-// this version includes updates to paddle collisions, level progression, and powerups
+// Arkanoid / Breakout clone in P3 by vvixi
+// this version includes updates to paddle collisions, level progression, powerups
+// and general bug fixes
+
 boolean blocks_set = false;
 int cols = 6, rows = 5;
 int lives = 3, score = 0;
@@ -21,14 +23,12 @@ private state _state = state.TITLE;
 public enum state {
   GAMEOVER,
   TITLE,
-  LEVEL,
   PLAY,
 }
 
 void set_blocks() {
  
   int end = levStart+6;
-  // 0:6 6:12 12:18 18:24 24:30 
   // create level from level file
   level = loadStrings("level.txt");
   //println(level.length);
@@ -82,9 +82,7 @@ void mouseReleased() {
     _state = state.TITLE;
   }
 }
-void load_level() {
-  
-}
+
 void draw() {
   background(40);
   rectMode(CORNER);
@@ -119,6 +117,7 @@ void draw() {
         bk.display();
       }
       if (blocks.size() == 0) {
+        balls.get(0).type = "standard";
         balls.get(0).launched = false;
         curLevel++;
         levStart+=6;
@@ -191,16 +190,16 @@ class Ball {
 
     if (!launched) {
       posx = player.posx;
-      posy = player.posy - 20;
+      posy = player.posy - 22;
     }
     if (launched) {
       posx += xspd;
       posy += yspd;
     }
-    if (posx > width || posx < 0) {
+    if (posx > width - balls.get(0).sz / 2 || posx < 0 + balls.get(0).sz / 2) {
       xspd *= -1;
     }
-    if (posy < 0) {
+    if (posy < 0 + balls.get(0).sz / 2) {
       yspd *= -1;
     }
     // count needs fixed
@@ -221,7 +220,8 @@ class Ball {
     for (int j = 0; j < balls.size(); j++) {
       Ball ball = balls.get(j);
       
-      // test for which side of paddle the ball hits
+      // test for collision with paddle
+      // need to test for which side of paddle the ball hits using balls prev position
       if (ball.posy > player.posy -player.h && ball.posy < player.posy + player.h) {
         if (ball.posx > player.posx - player.w / 2 && ball.posx < player.posx + player.w / 2) {     
           sounds[0].play();
@@ -243,7 +243,7 @@ class Ball {
         if (ball.posy > bk.posy * blk/3 && ball.posy < bk.posy * blk/3 + blk/3) {
         // if ball is within the length of the block
           if (ball.posx > bk.posx * blk && ball.posx < bk.posx * blk + blk) {
-            if (random(2) >= 1.85 && ball.type == "standard") {
+            if (random(2) >= 1.86 && ball.type == "standard") {
                 powerup = new Powerup(bk.posx * blk + blk /2 , bk.posy * blk /3 + blk / 3);
               }
             sounds[1].play();

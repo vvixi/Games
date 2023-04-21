@@ -1,5 +1,8 @@
 // Space Invaders clone in P3 by vvixi
-// improved hit detection on enemies and enemy movement
+// improved hit detection on enemies
+// improved particle effects
+// todo: additional enemy movement patterns
+// power ups need improvement
 
 import processing.sound.*;
 SoundFile[] sounds = new SoundFile[5];
@@ -15,7 +18,7 @@ PImage bg;
 ParticleSystem ps;
 ParticleSystem psP;
 
-private state _state = state.TITLE;
+private state _state = state.GAMEOVER;
 
 public enum state {
   GAMEOVER,
@@ -26,6 +29,7 @@ public enum state {
 }
 
 void setup() {
+  background(0);
   Sound s = new Sound(this);
   //s.list(); // you may need to choose a dif device number for your soundcard below
   // uncomment above to list your available devices
@@ -61,6 +65,15 @@ void spawn_powerup(int _locX, int _locY) {
 void keyPressed() {
   player.keyPressed();
 }
+
+Boolean timer(int _wait) {
+  int wait = _wait;
+  timeElapsed = millis() - start;
+  if (timeElapsed > wait) {
+    return true;
+  }
+  return false;
+}
 void draw() {
 
   bg = loadImage("assets/sb3.png");
@@ -88,10 +101,9 @@ void draw() {
       break;
       
     case ROUNDSTART:
-      // this mode is before round start
-      int wait = 2000;
-      timeElapsed = millis() - start;
-      if (timeElapsed > wait) {
+      // this mode is the setup before round start
+
+      if (timer(2000)) {
         
         spawn_aliens();
         start = millis();
@@ -99,7 +111,6 @@ void draw() {
         _state = state.PLAY;
       }
 
-      //background(bg);
       textSize(28);
       fill(255);
       text("W A V E  "+wave, width/2-80, height/2); 
@@ -109,14 +120,15 @@ void draw() {
       // this mode indicates round is started
       background(bg);
       if (aliens.size()-1 == 0) { 
-        if (wave < 5) {
+
+        start = millis();
+        if (wave < 6) {
           wave++;   
         } else {
-          wave = int(random(1,5));
+          wave = int(random(1,6));
         }
         start = millis();
         lasers.clear();
-        // mode = 0;
         _state = state.ROUNDSTART; 
       }
       
@@ -187,11 +199,11 @@ void draw() {
 
             if ((int(las.ypos) == int(alien.ypos)) && (las.xpos > int(alien.xpos) && las.xpos < alien.xpos+.65)) {
               // timer for particle effect
+              ps = new ParticleSystem(new PVector((alien.xpos*blk)+offs/2, (alien.ypos*blk)+offs/2));
               sounds[2].play();
+              
               for (int t =0; t < 60; t++) {
-              //  //rect(x*blk, y*blk, blk, blk);
                 ps.addParticle();
-                ps.run();
               }
               // spawn powerups
               if (random(200) > 198) {
@@ -220,6 +232,9 @@ void draw() {
       textSize(28);
       text("SCORE: "+ String.valueOf(score), 12, 28); 
       player.display();
+      if(ps != null) {
+        ps.run();
+      }
       break;
   }
 }
@@ -242,7 +257,7 @@ class Alien {
     ypos = _ypos;
   }
   void display() {
-    ps = new ParticleSystem(new PVector((xpos*blk)+offs, (ypos*blk)+offs));
+    //ps = new ParticleSystem(new PVector((xpos*blk)+offs, (ypos*blk)+offs));
     //draw sprite
     stroke(0, 100, 245);
     fill(0, 200, 200);
@@ -288,12 +303,14 @@ class Alien {
       
     }   
     if (moveMode == "aggro") {
+      dir = 0;
       ypos += .005;
       
     }
     if (moveMode == "descending8") {
-      if (xpos > 9) { dir = -1; ypos += 1.5; spd += .0025; }
-      if (xpos < 0) { dir = 1; ypos -= .5; }
+      if (dir == 0) { dir = 1; }
+      if (xpos > 9 || xpos < 0) { dir *= -1; spd += .0025; ypos += .5;}
+      if (ypos > 6 &&  xpos > 9 || ypos < 0 && xpos < 0) { ypos *= -1; }
 
     }
     if (moveMode != "static") {
@@ -336,7 +353,7 @@ class Laser {
     String row = (String) sprite[0][0];
     noStroke();
     // draw sprite
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 6; i++) {
       if (type == "player") {
         row = (String) sprite[player.selectedLaser][0];
       } 
@@ -443,9 +460,9 @@ class Player {
 
         } else if (_state == state.GAMEOVER) {
           
-          int wait = 2000;
-          timeElapsed = millis() - start;
-          if (timeElapsed > wait) {
+          //int wait = 2000;
+          //timeElapsed = millis() - start;
+          if (timer(2000)) {
             _state = state.TITLE;
           }
 
@@ -490,8 +507,8 @@ class Particle {
   float life;
   
   Particle(PVector l) {
-    accel = new PVector(0, 0.005);
-    velo = new PVector(random(-1, 1), random(-1, 1));
+    accel = new PVector(0, 0);
+    velo = new PVector(random(-2, 2), random(-2, 2));
     pos = l.copy();
     life = 255.0;
   }

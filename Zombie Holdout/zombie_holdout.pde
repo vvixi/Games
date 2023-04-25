@@ -1,5 +1,8 @@
 // Zombie survival top down shoot-em-up game by vvixi in P3
 // loosely inspired by Zombies Ate My Neighbors
+//
+// added minor improvements to visual style and weapons class
+// some weapons need finished
 // needs collisions, title screen, game over, level tilemaps
 // needs state machine, dif zombie types, movement code needs cleaned up
 
@@ -7,6 +10,7 @@ boolean [] keys = new boolean[256];
 boolean [] lastKeys = new boolean[256];
 PImage player_sprite;
 PImage crate_sprite;
+PImage floors_sprite;
 PImage walls_sprite;
 PImage zombie_sprite;
 PImage weapon_sprite;
@@ -64,18 +68,28 @@ void setup() {
   //rectMode(CENTER);
   strokeWeight(5);
   dropWeapon();
-  cols = width/blk;
-  rows = height/blk;
+  cols = width/blk+64;
+  rows = height/blk+64;
   path = new int[rows][cols];
   player = new Player();
-  player.setup();
-
+  //player.setup();
+  //player_sprite = loadImage("assets/player.png");
+  //floors_sprite = new Sprite();
+  // blocked test
+  
   for (int i = 0; i < cols; i++) {
     for (int j = 0; j < rows; j++) {
       path[i][j] = 0;
     }
   }
   world2map(player.loc.x, player.loc.y);
+  
+  crate_sprite = loadImage("assets/crate.png");
+  floors_sprite = loadImage("assets/ground.png");
+  walls_sprite = loadImage("assets/walls.png");
+  weapon_sprite = loadImage("assets/guns.png");
+
+  
 }
 
 void dropWeapon() {
@@ -116,22 +130,27 @@ void drawHUD() {
 }
 void draw() {
   clear();
+  if (player.weapon.totalAmmo < 12) {
+    dropWeapon();
+  }
   // needs replaced with floor and wall tiles
-  background(30, 30, 0);
+  //background(30, 30, 0);
   // grid lines for debugging
-  //for (int i = 0; i < cols; i++) {
-  //  for (int j = 0; j < rows; j++) {
-  //    strokeWeight(1);
-  //    stroke(80);
-  //    //noFill();
-  //    fill(0);
-  //    rect(i * blk, j * blk, blk, blk);
-  //    if (path[i][j] == 1) {
-  //      fill(50);
-  //      rect(i * blk, j * blk, blk, blk);
-  //    }
-  //  }
-  //}
+  for (int i = 0; i < cols/2; i++) {
+    for (int j = 0; j < rows/2; j++) {
+      //strokeWeight(1);
+      //stroke(80);
+      //noFill();
+      fill(0);
+      //rect(i * blk, j * blk, blk, blk);
+      //copy(floors_sprite, 0, 0, blk+blk, blk+blk, i*blk*2, j*blk*2, blk*2, blk*2);
+      copy(floors_sprite, 8, 8, blk, blk, i*blk*2, j*blk, blk*2, blk*2);
+      if (path[i][j] == 1) {
+        fill(50);
+        //rect(i * blk, j * blk, blk, blk);
+      }
+    }
+  }
   for (int i =0; i < stains.size(); i++) {
     Stain stain = stains.get(i);
     stain.display();
@@ -167,6 +186,7 @@ void draw() {
         if (zombie.health <= 0) {
           stains.add(new Stain(zombie.loc));
           zombies.remove(j);
+          score += 150;
         }
       }
     }
@@ -211,7 +231,7 @@ class Drop {
   Boolean weapon = false;
   Boolean opened = false;
   String[] weapons = { "pistol", "revolver", "shotty", "smg", "smg2", "rifle", "bazooka" };
-  int selWeapon = 5;
+  int selWeapon = 2;
   int sz = 12;
   
   Drop (PVector _loc) {
@@ -249,8 +269,22 @@ class Bullet {
     //ypos = _loc.y;
     fill(0, 0, 240);
     locB = _loc;
+    //if (player.weapon.selWeapon == 2) {
+    //  locB.add(new PVector(8, 8));
+      
+    //  locB.add(new PVector(8, 8));
+    //  locB.add(new PVector(8, 8));
+    //}
+    //if (player.weapon.selWeapon == 2) {
+    //  locB.add(new PVector(8+random(-1, 2), 8+random(-1, 2)));
+    //  locB.add(new PVector(8+random(-1, 2), 8+random(-1, 2)));
+      
+    //} else {
     locB.add(new PVector(8, 8));
+    
+    
     dir = _dir;
+      
     
   }
   void update() {
@@ -279,37 +313,46 @@ class Sprite {
   int offsY = 0 * sx;
   int w = 16;
   int h = w;
+  Boolean playing = false;
   
   Sprite() {
     
   }
   void update() {
-    sx = curFrame * w;
-    sy = row * h;
-    hold = (hold +1)% delay;
-    if (hold == 0) {
-      curFrame = (curFrame+1) % totalFrames;
-      //if (curFrame == totalFrames) {
-      //  row += 1;
-      //  curFrame = 0;
-      //}
+    if (playing) {
+      sx = curFrame * w;
+      sy = row * h;
+      hold = (hold +1)% delay;
+      if (hold == 0) {
+        curFrame = (curFrame+1) % totalFrames;
+        //if (curFrame == totalFrames) {
+        //  row += 1;
+        //  curFrame = 0;
+        //}
+      }
     }
   }
 }
 class Weapon {
   String[] type = { "pistol", "revolver", "shotty", "smg", "smg2", "rifle", "bazooka" };
+  //int[] type = { 0, 1, 2, 3, 4, 5, 6, 7};
+  int[] curMag = {10, 6, 8, 20, 25, 30, 1};
+  int selWeapon = 2;
   int[] shootTimers = {300, 350, 400, 100, 80, 150, 600 };
-  int shootTimer = shootTimers[3];
+  int shootTimer = shootTimers[selWeapon];
   int totalAmmo = 50;
-  int magazine = 20;
+  int magazine = curMag[selWeapon];
   int loadedAmmo = magazine;
   
-  Weapon() {
-    
+  Weapon(int _selWeapon) {
+    selWeapon= _selWeapon;
   }
   
-  void switchWeapon() {
+  void switchWeapon(int _selWeapon) {
     // switch weapons
+    selWeapon = _selWeapon;
+    magazine = curMag[selWeapon];
+    shootTimer = shootTimers[selWeapon];
   }
 }
   
@@ -336,13 +379,15 @@ class Player {
   
   Player() {
     loc = new PVector(width/2, height/2);
-    player_sprite = loadImage("assets/player.png");
-    weapon = new Weapon();
+    
+    weapon = new Weapon(2);
     //loc = new PVector(width/2, height/2);
     //loc.x = constrain(loc.x, 0, width);
     //loc.y = constrain(loc.y, 0, height);
+    player_sprite = loadImage("assets/player.png");
     sprite = new Sprite();
-    //sprite.curFrame = 0;
+    sprite.playing = false;
+    sprite.curFrame = 0;
   }
   void shoot(PVector _dir) {
     int type = 0;
@@ -350,6 +395,14 @@ class Player {
     start = millis();
     if (weapon.loadedAmmo > 0) {
       weapon.loadedAmmo -= 1;
+      if (player.weapon.selWeapon == 2) {
+        //PVector rand = new PVector(random(-1, 2), random(01,2));
+        //bulletLoc = new PVector(loc.x+5, loc.y+5);
+        //bulletLoc.add(rand);
+        //bulletLoc = new PVector(loc.x+5, loc.y+5);
+        //bulletLoc.add(rand);
+        bulletLoc = new PVector(loc.x+5, loc.y+5);
+      }
       bulletLoc = new PVector(loc.x+5, loc.y+5);
     } else {
       return;
@@ -369,6 +422,9 @@ class Player {
     }
   }
   void keyPressed() {
+    if (!sprite.playing) {
+      sprite.playing = true;
+    }
     // up left shot 
     if (keys['a'] && keys['w']) { 
       player.loc.x-=1;
@@ -462,13 +518,7 @@ class Player {
       keys[rawKey] = state;
     }
   }
-  void setup() {
-    crate_sprite = loadImage("assets/crate.png");
-    walls_sprite = loadImage("assets/walls.png");
-    weapon_sprite = loadImage("assets/guns.png");
-
-    
-  }
+  
   void display() {
     sprite.update();
 
@@ -515,6 +565,7 @@ class Zombie {
   Zombie(int _type) {
     zombie_sprite = loadImage("assets/zombie_1.png");
     sprite = new Sprite();
+    sprite.playing = true;
     sprite.delay = 2;
     //sprite.y = 0;
     sprite.row = 2;

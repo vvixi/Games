@@ -1,6 +1,7 @@
 // Zombie survival top down shoot-em-up game by vvixi in P3
 // loosely inspired by Zombies Ate My Neighbors
 //
+// added performance improvements
 // added minor improvements to visual style and weapons class
 // some weapons need finished
 // needs collisions, title screen, game over, level tilemaps
@@ -22,6 +23,7 @@ int curDir = 7;
 int curLevel = 1, score = 0;
 int start, timeElapsed;
 int cols, rows;
+int AreaCols, AreaRows;
 
 PVector up = new PVector(0, -10);
 PVector upright = new PVector(10, -10);
@@ -87,7 +89,7 @@ void setup() {
   crate_sprite = loadImage("assets/crate.png");
   floors_sprite = loadImage("assets/ground.png");
   walls_sprite = loadImage("assets/walls.png");
-  weapon_sprite = loadImage("assets/guns.png");
+  //weapon_sprite = loadImage("assets/guns.png");
 
   
 }
@@ -108,10 +110,11 @@ Boolean timer(int _wait) {
 void drawHUD() {
   int totalFrames = 4;
   int row = 0;
+  int xFrame = 0;
   int x = int(width-32);
   int y = 0;
   int sx = 1;
-  int offsX = 0 * sx; // replace 0 with mult of w
+  int offsX = xFrame * sx; // replace 0 with mult of w
   int offsY = 0 * sx;
   int w = 16;
   int h = w;
@@ -127,6 +130,7 @@ void drawHUD() {
   textSize(24);
   text(String.valueOf(player.weapon.totalAmmo), width-64, 54);
   copy(weapon_sprite, sx+offsX, sx+offsY, w, h, x, y, w*2, h*2);
+
 }
 void draw() {
   clear();
@@ -157,7 +161,7 @@ void draw() {
   }
   //switch(_state) {
   //  case TITLE:
-  if (frameCount % 20 == 0) {
+  if (zombies.size() < 100 && frameCount % 32 == 0) {
     zombies.add(new Zombie(int(random(2))));
   }
   for (int j =0; j < drops.size(); j++) {
@@ -283,6 +287,7 @@ class Bullet {
     locB.add(new PVector(8, 8));
     
     
+    
     dir = _dir;
       
     
@@ -304,12 +309,13 @@ class Sprite {
   int curFrame = 0;
   int row = 0;
   int hold = 0;
+  int xFrame = 0;
   int delay = 1;
   int x = int(width-32);
   int y = 0;
   int sx = 0;
   int sy = 0;
-  int offsX = 0 * sx; // replace 0 with mult of w
+  int offsX = xFrame * sx; // replace 0 with mult of w
   int offsY = 0 * sx;
   int w = 16;
   int h = w;
@@ -337,12 +343,13 @@ class Weapon {
   String[] type = { "pistol", "revolver", "shotty", "smg", "smg2", "rifle", "bazooka" };
   //int[] type = { 0, 1, 2, 3, 4, 5, 6, 7};
   int[] curMag = {10, 6, 8, 20, 25, 30, 1};
-  int selWeapon = 2;
+  int selWeapon = 4;
   int[] shootTimers = {300, 350, 400, 100, 80, 150, 600 };
   int shootTimer = shootTimers[selWeapon];
   int totalAmmo = 50;
   int magazine = curMag[selWeapon];
   int loadedAmmo = magazine;
+  //Sprite = new Sprite();
   
   Weapon(int _selWeapon) {
     selWeapon= _selWeapon;
@@ -351,6 +358,7 @@ class Weapon {
   void switchWeapon(int _selWeapon) {
     // switch weapons
     selWeapon = _selWeapon;
+    xFrame = selWeapon * 16;
     magazine = curMag[selWeapon];
     shootTimer = shootTimers[selWeapon];
   }
@@ -379,8 +387,7 @@ class Player {
   
   Player() {
     loc = new PVector(width/2, height/2);
-    
-    weapon = new Weapon(2);
+    weapon = new Weapon(4);
     //loc = new PVector(width/2, height/2);
     //loc.x = constrain(loc.x, 0, width);
     //loc.y = constrain(loc.y, 0, height);
@@ -390,12 +397,14 @@ class Player {
     sprite.curFrame = 0;
   }
   void shoot(PVector _dir) {
+    //PVector spread1 = _dir.add(random(1), random(1));
+    //PVector spread2 = _dir.add(random(1,2), random(1,2));
     int type = 0;
     PVector bulletLoc;
     start = millis();
     if (weapon.loadedAmmo > 0) {
       weapon.loadedAmmo -= 1;
-      if (player.weapon.selWeapon == 2) {
+      if (weapon.selWeapon == 2) {
         //PVector rand = new PVector(random(-1, 2), random(01,2));
         //bulletLoc = new PVector(loc.x+5, loc.y+5);
         //bulletLoc.add(rand);
@@ -408,6 +417,8 @@ class Player {
       return;
     }
     bullets.add(new Bullet(type, bulletLoc, _dir));
+    //bullets.add(new Bullet(type, bulletLoc, spread1));
+    //bullets.add(new Bullet(type, bulletLoc, spread2));
   }
   void reload() {
     if (weapon.loadedAmmo == 0 && weapon.totalAmmo > 0) {
@@ -649,6 +660,7 @@ class Zombie {
     
   }
   void display() {
+    PVector w2m = world2map(loc.x, loc.y);
     noStroke();
     //ps = new ParticleSystem(new PVector((loc.x), (loc.y)));
     //int x = (counter % 4) * 16;
@@ -657,7 +669,11 @@ class Zombie {
     //circle(loc.x, loc.y, sz);
     //sx = curFrame * w;
     //sy = row * h;
-    copy(zombie_sprite, sprite.sx+sprite.offsX, sprite.sy+sprite.offsY, sprite.w, sprite.h, int(loc.x), int(loc.y), sprite.w*2, sprite.h*2);
+    //PVector w2m = world2map(loc.x, loc.y);
+    if (w2m.x >= 3 && w2m.x <= cols && w2m.y >= 3 && w2m.y <= rows ) {
+      
+      copy(zombie_sprite, sprite.sx+sprite.offsX, sprite.sy+sprite.offsY, sprite.w, sprite.h, int(loc.x), int(loc.y), sprite.w*2, sprite.h*2);
+    }
   }
 }
 // particles
@@ -681,9 +697,8 @@ class Particle {
   void update() {
     velo.add(accel);
     pos.add(velo);
-    life -= 1.0;
+    life -= 10.0;
   }
-    
   void display() {
     fill(170, 0, 0, life);
     circle(pos.x, pos.y, 5);

@@ -17,7 +17,7 @@ PImage zombie_sprite;
 PImage weapon_sprite;
 PVector loc, locB;
 // 10, 5
-int blk = 16, offs = 8;
+int blk = 16, offs = 16;
 // 0 up, 1 right, 2 down, 3 left
 int curDir = 7;
 int curLevel = 1, score = 0;
@@ -35,8 +35,10 @@ PVector left = new PVector(-10, 0);
 PVector downleft = new PVector(-10, 10);
 PVector[] dirs = {up, upright, right, downright, down, downleft, left, upleft};
 char keyHit = ' ';
-PVector[] dropLocs = {new PVector(random(width-80, width-12), random(12, 64)), new PVector(random(20), random(60)), new PVector(12, 64, random(height-64, height-12)), new PVector(random(width-64, width-12), random(height-64, height-12))};
+//PVector[] dropLocs = {new PVector(random(width-80, width-12), random(12, 64)), new PVector(random(20), random(60)), new PVector(random(12, 64), random(width-64, width-12)), new PVector(random(width-64, width-12), random(height-64, height-12))};
+//PVector[] dropLocs = {new PVector(int(random(cols-10*blk, cols-1*blk)), int(random(rows-10*blk, rows-1*blk)))};
 //Entity entity;
+PVector[] dropLocs = {new PVector(3*blk, 3*blk), new PVector(30*blk, 3*blk), new PVector(3*blk, 30*blk), new PVector(30*blk, 30*blk)};
 Player player;
 Weapon weapon;
 //Sprite sprite;
@@ -55,9 +57,21 @@ public enum state {
   PLAY,
   PAUSE 
 }
+Boolean inMap(float _x, float _y) {
+  if (_x > cols || _x < 0 || _y < 0 ||_y > rows) {
+    return false;
+  } else {
+    return true;
+  }
+}
 PVector world2map(float _x, float _y) {
+  // return null if we are not on tilemap
+  if (_x > cols || _x < 0 || _y < 0 ||_y > rows) {
+    return new PVector(0, 0);
+  }
   int newX = int(_x / 16 +1);
   int newY = int(_y / 16 +2);
+  
   path[newX][newY] = 1;
   return new PVector(newX, newY);
 }
@@ -84,7 +98,7 @@ void setup() {
       path[i][j] = 0;
     }
   }
-  world2map(player.loc.x, player.loc.y);
+  //world2map(player.loc.x, player.loc.y);
   
   crate_sprite = loadImage("assets/crate.png");
   floors_sprite = loadImage("assets/ground.png");
@@ -108,13 +122,13 @@ Boolean timer(int _wait) {
   return false;
 }
 void drawHUD() {
-  int totalFrames = 4;
-  int row = 0;
-  int xFrame = 0;
+  //int totalFrames = 4;
+  //int row = 0;
+  //int xFrame = 0;
   int x = int(width-32);
   int y = 0;
   int sx = 1;
-  int offsX = xFrame * sx; // replace 0 with mult of w
+  //int offsX = 0 * sx; // replace 0 with mult of w
   int offsY = 0 * sx;
   int w = 16;
   int h = w;
@@ -129,26 +143,31 @@ void drawHUD() {
   text(String.valueOf(player.weapon.loadedAmmo), width-64, 24);
   textSize(24);
   text(String.valueOf(player.weapon.totalAmmo), width-64, 54);
-  copy(weapon_sprite, sx+offsX, sx+offsY, w, h, x, y, w*2, h*2);
+  //println(weapon != null);
+  //if (weapon != null) {
+  //  weapon.display();
+  //}
+  copy(weapon_sprite, player.weapon.sprite.xFrame+player.weapon.sprite.offsX, sx+offsY, w, h, x, y, w*2, h*2);
 
 }
 void draw() {
-  clear();
-  if (player.weapon.totalAmmo < 12) {
+  //clear();
+  // needs reworked
+  if (drops.size() < 2 && player.weapon.totalAmmo < 6) {
     dropWeapon();
   }
   // needs replaced with floor and wall tiles
   //background(30, 30, 0);
   // grid lines for debugging
-  for (int i = 0; i < cols/2; i++) {
-    for (int j = 0; j < rows/2; j++) {
+  for (int i = 0; i < cols; i++) {
+    for (int j = 0; j < rows; j++) {
       //strokeWeight(1);
       //stroke(80);
       //noFill();
       fill(0);
       //rect(i * blk, j * blk, blk, blk);
       //copy(floors_sprite, 0, 0, blk+blk, blk+blk, i*blk*2, j*blk*2, blk*2, blk*2);
-      copy(floors_sprite, 8, 8, blk, blk, i*blk*2, j*blk, blk*2, blk*2);
+      copy(floors_sprite, 0, 0, blk, blk, i*blk, j*blk, blk, blk);
       if (path[i][j] == 1) {
         fill(50);
         //rect(i * blk, j * blk, blk, blk);
@@ -162,13 +181,13 @@ void draw() {
   //switch(_state) {
   //  case TITLE:
   if (zombies.size() < 100 && frameCount % 32 == 0) {
-    zombies.add(new Zombie(int(random(2))));
+    zombies.add(new Zombie(int(random(1))));
   }
   for (int j =0; j < drops.size(); j++) {
     Drop drop = drops.get(j);
     drop.display();
   }
-  for (int j =0; j < zombies.size(); j++) {
+  for (int j =0; j < zombies.size()-1; j++) {
     Zombie zombie = zombies.get(j);
     zombie.update();
     zombie.display();
@@ -240,6 +259,7 @@ class Drop {
   
   Drop (PVector _loc) {
     loc = _loc;
+    //loc.mult(32);
     
   }
   void display() {
@@ -269,27 +289,11 @@ class Bullet {
   // types: basic mult speeds, shotty, bazooka
   
   Bullet(int _type, PVector _loc, PVector _dir) {
-    //xpos = _loc.x;
-    //ypos = _loc.y;
+
     fill(0, 0, 240);
     locB = _loc;
-    //if (player.weapon.selWeapon == 2) {
-    //  locB.add(new PVector(8, 8));
-      
-    //  locB.add(new PVector(8, 8));
-    //  locB.add(new PVector(8, 8));
-    //}
-    //if (player.weapon.selWeapon == 2) {
-    //  locB.add(new PVector(8+random(-1, 2), 8+random(-1, 2)));
-    //  locB.add(new PVector(8+random(-1, 2), 8+random(-1, 2)));
-      
-    //} else {
     locB.add(new PVector(8, 8));
-    
-    
-    
-    dir = _dir;
-      
+    dir = _dir;     
     
   }
   void update() {
@@ -349,18 +353,29 @@ class Weapon {
   int totalAmmo = 50;
   int magazine = curMag[selWeapon];
   int loadedAmmo = magazine;
-  //Sprite = new Sprite();
+  Sprite sprite;
+  
   
   Weapon(int _selWeapon) {
     selWeapon= _selWeapon;
+    weapon_sprite = loadImage("assets/guns.png");
+    sprite = new Sprite();
+    sprite.xFrame = selWeapon*16;
   }
   
   void switchWeapon(int _selWeapon) {
     // switch weapons
     selWeapon = _selWeapon;
-    xFrame = selWeapon * 16;
+    sprite.xFrame = selWeapon*32;
     magazine = curMag[selWeapon];
     shootTimer = shootTimers[selWeapon];
+  }
+  void display() {
+    int sx = 1;
+    int offsX = 0 * sx; // replace 0 with mult of w
+    int offsY = 0 * sx;
+    //copy(weapon_sprite, weapon.sprite.xFrame, sx+offsY, w, h, x, y, w*2, h*2);
+    copy(weapon_sprite, sx+offsX, 0+sprite.offsY, 16, 16, int(width-32), 0, 32, 32);
   }
 }
   
@@ -387,7 +402,7 @@ class Player {
   
   Player() {
     loc = new PVector(width/2, height/2);
-    weapon = new Weapon(4);
+    weapon = new Weapon(5);
     //loc = new PVector(width/2, height/2);
     //loc.x = constrain(loc.x, 0, width);
     //loc.y = constrain(loc.y, 0, height);
@@ -557,8 +572,8 @@ class Stain {
 }
 
 class Zombie {
-  PVector spawnLoc1 = new PVector(random(width), 0);
-  PVector spawnLoc2 = new PVector(random(width), height);
+  PVector spawnLoc1 = new PVector(random(width), 16);
+  PVector spawnLoc2 = new PVector(random(width), height-16);
   PVector[] spawnPoints = {spawnLoc1, spawnLoc2};
   PVector loc;
   int type = 0;
@@ -571,9 +586,17 @@ class Zombie {
   color flashClr = color(200, 50, 0);
   color Clr;
   Sprite sprite;
-
+  PVector choice;
+  PVector _up = up.copy();
+  PVector _down = down.copy();
+  PVector _left = left.copy();
+  PVector _right = right.copy();
   
   Zombie(int _type) {
+    _up.div(5);
+    _right.div(5);
+    _down.div(5);
+    _left.div(5);
     zombie_sprite = loadImage("assets/zombie_1.png");
     sprite = new Sprite();
     sprite.playing = true;
@@ -602,11 +625,41 @@ class Zombie {
     }
     
   }
+  PVector[] canMove() {
+    // test for open dirs that the zombie can move in
+    int x = int(loc.x/16);
+    int y = int(loc.y/16);
+    PVector[] openDirs = {new PVector(0,0),new PVector(0,0),new PVector(0,0),new PVector(0,0)};
+    if (int(x - 16) >= 0) {
+      openDirs[0] = _left;
+    }
+    if (x + 16 < cols-1) {
+      openDirs[1] = _right;
+    }
+    if (int(y - 16) >= 0) {
+      openDirs[2] = _up;
+    }
+    if (int(y + 16) < rows - 1) {
+      openDirs[3] = _down;
+    }
+    return openDirs;
+    
+    
+  }
   void update() {
     //ps = new ParticleSystem(new PVector((loc.x*blk)+offs, (loc.y*blk)+offs));
     //case type:
     sprite.update();
     //sprite.curFrame = 0;
+    //println(canMove());
+    //if (true) {
+    //  PVector[] choices = canMove();
+    //  PVector move = choices[int(random(4))];
+    //  //println(choice);
+    //  if (move != new PVector(0, 0)){
+    //    //loc.add(choice);
+    //    choice = move;
+    //  }
     
     // early movement for prototyping phase,
     // needs replaced with boids like collision and movement
@@ -628,39 +681,41 @@ class Zombie {
         loc.y-=speed;
         //loc.x+=random(1);
       }
-    } else if (type == 1) {
-      // hulk
-      if (health == 3) {
-        if (loc.y < player.loc.y) {
-          loc.y+=speed;
-        }
-        if (loc.y > player.loc.y) {
-          loc.y-=speed;
-        }
-        loc.add(random(-1, 2), 0);
-      } else {
-        speed = 0.7;
-        //if (loc.x > player.loc.x || loc.x < player.loc.x) {
-        //  loc.x *= -speed;
-        //}
-        if (loc.y < player.loc.y) {
-          loc.y+=speed;
-        }
-        if (loc.y > player.loc.y) {
-          loc.y-=speed;
-        }
-        if (loc.x < player.loc.x) {
-          loc.x+=speed;
-        }
-        if (loc.x > player.loc.x) {
-          loc.x-=speed;
-        }
-      }
+    //} else if (type == 1) {
+    //  // hulk
+    //  if (health == 3) {
+    //    if (loc.y < player.loc.y) {
+    //      loc.y+=speed;
+    //    }
+    //    if (loc.y > player.loc.y) {
+    //      loc.y-=speed;
+    //    }
+    //    loc.add(random(-1, 2), 0);
+    //  }
+      //} else {
+      //  speed = 0.7;
+      //  //if (loc.x > player.loc.x || loc.x < player.loc.x) {
+      //  //  loc.x *= -speed;
+      //  //}
+      //  if (loc.y < player.loc.y) {
+      //    loc.y+=speed;
+      //  }
+      //  if (loc.y > player.loc.y) {
+      //    loc.y-=speed;
+      //  }
+      //  if (loc.x < player.loc.x) {
+      //    loc.x+=speed;
+      //  }
+      //  if (loc.x > player.loc.x) {
+      //    loc.x-=speed;
+      //  }
+      //}
     }
+    //loc.add(choice);
     
   }
   void display() {
-    PVector w2m = world2map(loc.x, loc.y);
+    //PVector w2m = world2map(int(loc.x), int(loc.y));
     noStroke();
     //ps = new ParticleSystem(new PVector((loc.x), (loc.y)));
     //int x = (counter % 4) * 16;
@@ -670,10 +725,12 @@ class Zombie {
     //sx = curFrame * w;
     //sy = row * h;
     //PVector w2m = world2map(loc.x, loc.y);
-    if (w2m.x >= 3 && w2m.x <= cols && w2m.y >= 3 && w2m.y <= rows ) {
-      
-      copy(zombie_sprite, sprite.sx+sprite.offsX, sprite.sy+sprite.offsY, sprite.w, sprite.h, int(loc.x), int(loc.y), sprite.w*2, sprite.h*2);
-    }
+    copy(zombie_sprite, sprite.sx+sprite.offsX, sprite.sy+sprite.offsY, sprite.w, sprite.h, int(loc.x), int(loc.y), sprite.w*2, sprite.h*2);
+    //println(zombies.size());
+    //if (inMap(loc.x, loc.y)) {
+    //  //println(loc.x, loc.y);
+    //  copy(zombie_sprite, sprite.sx+sprite.offsX, sprite.sy+sprite.offsY, sprite.w, sprite.h, int(loc.x), int(loc.y), sprite.w*2, sprite.h*2);
+    //}
   }
 }
 // particles

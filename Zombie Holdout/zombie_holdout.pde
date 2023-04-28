@@ -35,13 +35,9 @@ PVector left = new PVector(-10, 0);
 PVector downleft = new PVector(-10, 10);
 PVector[] dirs = {up, upright, right, downright, down, downleft, left, upleft};
 char keyHit = ' ';
-//PVector[] dropLocs = {new PVector(random(width-80, width-12), random(12, 64)), new PVector(random(20), random(60)), new PVector(random(12, 64), random(width-64, width-12)), new PVector(random(width-64, width-12), random(height-64, height-12))};
-//PVector[] dropLocs = {new PVector(int(random(cols-10*blk, cols-1*blk)), int(random(rows-10*blk, rows-1*blk)))};
-//Entity entity;
 PVector[] dropLocs = {new PVector(3*blk, 3*blk), new PVector(30*blk, 3*blk), new PVector(3*blk, 30*blk), new PVector(30*blk, 30*blk)};
 Player player;
 Weapon weapon;
-//Sprite sprite;
 ParticleSystem ps;
 ArrayList<Drop> drops = new ArrayList<Drop>();
 ArrayList<Zombie> zombies = new ArrayList<Zombie>();
@@ -102,10 +98,7 @@ void setup() {
   
   crate_sprite = loadImage("assets/crate.png");
   floors_sprite = loadImage("assets/ground.png");
-  walls_sprite = loadImage("assets/walls.png");
-  //weapon_sprite = loadImage("assets/guns.png");
-
-  
+  walls_sprite = loadImage("assets/walls.png");  
 }
 
 void dropWeapon() {
@@ -122,9 +115,7 @@ Boolean timer(int _wait) {
   return false;
 }
 void drawHUD() {
-  //int totalFrames = 4;
-  //int row = 0;
-  //int xFrame = 0;
+
   int x = int(width-32);
   int y = 0;
   int sx = 1;
@@ -143,33 +134,29 @@ void drawHUD() {
   text(String.valueOf(player.weapon.loadedAmmo), width-64, 24);
   textSize(24);
   text(String.valueOf(player.weapon.totalAmmo), width-64, 54);
-  //println(weapon != null);
-  //if (weapon != null) {
-  //  weapon.display();
-  //}
+
   copy(weapon_sprite, player.weapon.sprite.xFrame+player.weapon.sprite.offsX, sx+offsY, w, h, x, y, w*2, h*2);
 
 }
 void draw() {
-  //clear();
+  
   // needs reworked
   if (drops.size() < 2 && player.weapon.totalAmmo < 6) {
     dropWeapon();
   }
   // needs replaced with floor and wall tiles
-  //background(30, 30, 0);
   // grid lines for debugging
   for (int i = 0; i < cols; i++) {
     for (int j = 0; j < rows; j++) {
       //strokeWeight(1);
       //stroke(80);
       //noFill();
-      fill(0);
+      //fill(0);
       //rect(i * blk, j * blk, blk, blk);
-      //copy(floors_sprite, 0, 0, blk+blk, blk+blk, i*blk*2, j*blk*2, blk*2, blk*2);
       copy(floors_sprite, 0, 0, blk, blk, i*blk, j*blk, blk, blk);
+      // for tile based collisions later
       if (path[i][j] == 1) {
-        fill(50);
+        //fill(50);
         //rect(i * blk, j * blk, blk, blk);
       }
     }
@@ -228,15 +215,11 @@ void draw() {
   }
   player.display();
   player.keyPressed();
-  //println(player.loc);
-  //println(curDir);
+
   if(ps != null) {
     ps.run();
   }
-  //strokeWeight(3);
 
-  
-  //copy(weapon_sprite, sx+offsX, sx+offsY, w, h, x, y, w*2, h*2);
   drawHUD();
 }
 
@@ -266,7 +249,6 @@ class Drop {
     if (!opened) {
       fill(120, 120, 0);
       //rect(loc.x, loc.y, 12, 12);
-      //copy(crate_sprite, sx+offsX, sx+offsY, w, h, int(loc.x), int(loc.y), w*2, h*2);
       copy(crate_sprite, 0, 0, 16, 16, int(loc.x), int(loc.y), 16*2, 16*2);
       // basic collision
       if (player.loc.x >= loc.x - sz && player.loc.x <= loc.x + sz && player.loc.y >= loc.y - sz && player.loc.y < loc.y + sz) {
@@ -384,19 +366,6 @@ class Player {
   PVector loc;
   int counter;
   Weapon weapon;
-  // pistol, revolver, shotty, smg, smg2, rifle, bazooka
-  // pistol basic shot 10 rounds
-  // revolver, fast reload, pen shot 6 rounds
-  // shotty spread shot, more dmg 8 rounds
-  // smg1 fast reload fast shot, no pen 20 rounds
-  // rifle fast reload, fast shot 30 rounds
-  // bazooka slow reload slow shot radius area of effect 1 round
-  
-  //int[] shootTimers = {300, 350, 400, 100, 80, 150, 600 };
-  //int shootTimer = shootTimers[0];
-  //int totalAmmo = 50;
-  //int magazine = 10;
-  //int loadedAmmo = magazine;
   Sprite sprite;
 
   
@@ -549,10 +518,6 @@ class Player {
     sprite.update();
 
     noStroke();
-    //int x = (counter % 4) * 16;
-    //fill(200);
-    //image(sprite, x, loc.x, 16, 16, 0, 0, 16, 16);
-    //rect(loc.x, loc.y, 10, 10);
     copy(player_sprite, sprite.sx+sprite.offsX, sprite.sy+sprite.offsY, sprite.w, sprite.h, int(loc.x), int(loc.y), sprite.w*2, sprite.h*2);
   }
 }

@@ -8,9 +8,8 @@ My take on this game includes the following features (and more!):
 * assorted powerups
 * particle effects 
 * sound effects
+* level progression
 
 Known issues:
 * collision with sides of paddle needs debugged
-* paddle collision needs refined based on which side the ball hits
-* levels need added
-* need level progression
+
